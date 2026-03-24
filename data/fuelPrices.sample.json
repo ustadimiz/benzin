@@ -1,0 +1,56 @@
+{
+  "updatedAt": "2026-03-24T09:00:00+03:00",
+  "currency": "TRY",
+  "records": [
+    {
+      "city": "Istanbul",
+      "district": "Kadikoy",
+      "brand": "Ornek Petrol",
+      "prices": {
+        "benzin": 45.72,
+        "motorin": 46.11,
+        "lpg": 24.35
+      }
+    },
+    {
+      "city": "Ankara",
+      "district": "Cankaya",
+      "brand": "Anadolu Akaryakit",
+      "prices": {
+        "benzin": 45.28,
+        "motorin": 45.89,
+        "lpg": 23.97
+      }
+    },
+    {
+      "city": "Izmir",
+      "district": "Bornova",
+      "brand": "Ege Fuel",
+      "prices": {
+        "benzin": 45.59,
+        "motorin": 46.03,
+        "lpg": 24.18
+      }
+    },
+    {
+      "city": "Bursa",
+      "district": "Nilufer",
+      "brand": "Yesil Pompa",
+      "prices": {
+        "benzin": 45.41,
+        "motorin": 45.94,
+        "lpg": 24.02
+      }
+    },
+    {
+      "city": "Antalya",
+      "district": "Muratpasa",
+      "brand": "Akdeniz Oil",
+      "prices": {
+        "benzin": 45.88,
+        "motorin": 46.22,
+        "lpg": 24.44
+      }
+    }
+  ]
+}
