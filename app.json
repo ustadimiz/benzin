@@ -1,18 +1,23 @@
 {
-  "expo": {
-    "name": "Benzin",
-    "slug": "benzin",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "0c10d14a-9998-49e4-b95e-3ace86eff017"
-      }
-    },
-    "owner": "ustad"
-  }
+	"expo": {
+		"name": "Benzin",
+		"slug": "benzin",
+		"version": "1.0.0",
+		"orientation": "portrait",
+		"userInterfaceStyle": "light",
+		"assetBundlePatterns": [
+			"**/*"
+		],
+		"extra": {
+			"supabaseUrl": "https://uwpmketfkxbvcgxnitib.supabase.co",
+			"supabaseAnonKey": "sb_publishable_E-uMLASFSx81BSo9td3Nmw_rq8ocqSV",
+			"eas": {
+				"projectId": "0c10d14a-9998-49e4-b95e-3ace86eff017"
+			}
+		},
+		"owner": "ustad",
+		"android": {
+			"package": "com.ustad.benzin"
+		}
+	}
 }

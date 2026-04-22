@@ -1,6 +1,54 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="256" height="256" rx="52" fill="#0F766E"/>
-  <path d="M128 44C103 77 82 103 82 135C82 166.5 102.5 190 128 190C153.5 190 174 166.5 174 135C174 103 153 77 128 44Z" fill="#FDE68A"/>
-  <path d="M128 90C117 106 108 120 108 135C108 149.5 116.5 160 128 160C139.5 160 148 149.5 148 135C148 120 139 106 128 90Z" fill="#0F766E"/>
-  <rect x="60" y="196" width="136" height="20" rx="10" fill="#CCFBF1"/>
+  <!-- Arka plan -->
+  <rect width="256" height="256" rx="52" fill="#0F2438"/>
+  
+  <!-- Dairesel gösterge - arka -->
+  <circle cx="128" cy="128" r="110" stroke="#1A3A52" stroke-width="2" fill="none" opacity="0.5"/>
+  <circle cx="128" cy="128" r="100" stroke="#2A5A7A" stroke-width="1" fill="none" opacity="0.3"/>
+  
+  <!-- Gösterge segments - Sarı (Benzin) -->
+  <path d="M 128 30 A 98 98 0 0 1 198 51" stroke="#FCD34D" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- Gösterge segments - Turuncu (Motorin) -->
+  <path d="M 198 51 A 98 98 0 0 1 220 128" stroke="#FB923C" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- Gösterge segments - Mavi (LPG) -->
+  <path d="M 220 128 A 98 98 0 0 1 128 220" stroke="#3B82F6" stroke-width="6" fill="none" stroke-linecap="round"/>
+  
+  <!-- Araç silueti - yan profil -->
+  <!-- Araç gövdesi -->
+  <ellipse cx="128" cy="140" rx="45" ry="22" fill="#1E5A96" opacity="0.9"/>
+  
+  <!-- Araç öne kısmı -->
+  <path d="M 165 140 L 175 135 L 175 145 Z" fill="#1E5A96" opacity="0.9"/>
+  
+  <!-- Araç arka kısmı -->
+  <path d="M 85 140 L 75 138 L 75 142 Z" fill="#1E5A96" opacity="0.9"/>
+  
+  <!-- Ön pencere -->
+  <path d="M 155 135 Q 165 132 175 135" stroke="#60A5FA" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Arka pencere -->
+  <path d="M 90 135 Q 100 132 110 135" stroke="#60A5FA" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Tekerlek 1 -->
+  <circle cx="105" cy="155" r="8" fill="#334155" stroke="#0F2438" stroke-width="2"/>
+  <circle cx="105" cy="155" r="4" fill="#475569"/>
+  
+  <!-- Tekerlek 2 -->
+  <circle cx="155" cy="155" r="8" fill="#334155" stroke="#0F2438" stroke-width="2"/>
+  <circle cx="155" cy="155" r="4" fill="#475569"/>
+  
+  <!-- Yakıt tankı göstergesi (sağ üst) -->
+  <rect x="195" y="50" width="30" height="20" rx="4" fill="#1A3A52" stroke="#FCD34D" stroke-width="2"/>
+  <text x="210" y="64" font-size="11" font-weight="bold" fill="#FCD34D" text-anchor="middle">⛽</text>
+  
+  <!-- Bakım ikonu (sol üst) -->
+  <circle cx="35" cy="60" r="16" fill="none" stroke="#FB923C" stroke-width="2"/>
+  <text x="35" y="67" font-size="18" fill="#FB923C" text-anchor="middle">🔧</text>
+  
+  <!-- Bildirim ikonu (sağ alt) -->
+  <circle cx="220" cy="210" r="12" fill="#EF4444" opacity="0.8"/>
+  <circle cx="220" cy="210" r="10" fill="#DC2626" opacity="0.9"/>
+  <text x="220" y="216" font-size="14" fill="white" text-anchor="middle" font-weight="bold">!</text>
 </svg>

@@ -3,9 +3,10 @@
   "currency": "TRY",
   "records": [
     {
-      "city": "Istanbul",
-      "district": "Kadikoy",
+      "city": "İstanbul",
+      "district": "Kadıköy",
       "brand": "Ornek Petrol",
+      "favorite": true,
       "prices": {
         "benzin": 45.72,
         "motorin": 46.11,
@@ -14,7 +15,7 @@
     },
     {
       "city": "Ankara",
-      "district": "Cankaya",
+      "district": "Çankaya",
       "brand": "Anadolu Akaryakit",
       "prices": {
         "benzin": 45.28,
@@ -23,9 +24,10 @@
       }
     },
     {
-      "city": "Izmir",
+      "city": "İzmir",
       "district": "Bornova",
       "brand": "Ege Fuel",
+      "favorite": true,
       "prices": {
         "benzin": 45.59,
         "motorin": 46.03,
@@ -34,7 +36,7 @@
     },
     {
       "city": "Bursa",
-      "district": "Nilufer",
+      "district": "Nilüfer",
       "brand": "Yesil Pompa",
       "prices": {
         "benzin": 45.41,
@@ -44,7 +46,7 @@
     },
     {
       "city": "Antalya",
-      "district": "Muratpasa",
+      "district": "Muratpaşa",
       "brand": "Akdeniz Oil",
       "prices": {
         "benzin": 45.88,
