@@ -32,7 +32,7 @@ jobs:
         run: npm ci
 
       - name: Export Expo web build
-        run: npm run export:web
+        run: npx expo export --platform web --output-dir dist --base-url /${{ github.event.repository.name }}/
 
       - name: Prepare static hosting files
         run: |
