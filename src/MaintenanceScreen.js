@@ -15,7 +15,7 @@ import {
   View,
 } from "react-native";
 import { t as getT } from "./i18n";
-import { loadFuelState, loadMaintenanceState, saveFuelState, saveMaintenanceState } from "./userData";
+import { loadFuelState, loadMaintenanceState, saveFuelState, saveMaintenanceState, loadMaintenanceTypes } from "./userData";
 
 const columnWidths = {
   date: 92,
@@ -55,7 +55,8 @@ const emptyEntry = () => ({
 
 const fmt = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export default function MaintenanceScreen({ lang = "tr", userId = "default" }) {
+export default function MaintenanceScreen({ lang = "tr", userId = "default", themeMode = "dark" }) {
+  const isDark = themeMode === "dark";
   const i = getT(lang);
   const MAINTENANCE_TYPES = i.maintenanceTypeList;
 
@@ -69,20 +70,30 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default" }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [entryForm, setEntryForm] = useState(emptyEntry());
   const [refreshing, setRefreshing] = useState(false);
+  const [maintenanceTypeOptions, setMaintenanceTypeOptions] = useState([]);
+  const [manualMaintenanceInput, setManualMaintenanceInput] = useState("");
 
   const loadData = async () => {
-    try {
-      const [nextFuelData, nextMaintenanceData] = await Promise.all([
-        loadFuelState(userId),
-        loadMaintenanceState(userId),
-      ]);
+    const [fuelResult, maintenanceResult] = await Promise.allSettled([
+      loadFuelState(userId),
+      loadMaintenanceState(userId),
+    ]);
 
+    if (fuelResult.status === "fulfilled") {
+      const nextFuelData = fuelResult.value || { vehicles: [], entries: [] };
       const nextVehicles = nextFuelData.vehicles || [];
       setFuelData(nextFuelData);
       setVehicles(nextVehicles);
-      setEntries(nextMaintenanceData.entries || []);
       setSelectedVehicle((current) => nextVehicles.find((vehicle) => vehicle.id === current?.id) || nextVehicles[0] || null);
-    } catch (_) {}
+    }
+
+    if (maintenanceResult.status === "fulfilled") {
+      const nextMaintenanceData = maintenanceResult.value || { entries: [] };
+      setEntries(nextMaintenanceData.entries || []);
+    }
+
+    const dbTypes = await loadMaintenanceTypes();
+    setMaintenanceTypeOptions(dbTypes);
   };
 
   useEffect(() => {
@@ -138,6 +149,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default" }) {
       cost: String(item.cost ?? ""),
       vehicleId: item.vehicleId,
     });
+    setManualMaintenanceInput("");
     setShowAddEntry(true);
   };
 
@@ -145,7 +157,9 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default" }) {
     setShowAddEntry(false);
     setEditingId(null);
     setShowDatePicker(false);
+    setShowMaintenanceModal(false);
     setEntryForm(emptyEntry());
+    setManualMaintenanceInput("");
   };
 
   const deleteEntry = async (id) => {
@@ -200,6 +214,8 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default" }) {
       : [...entryForm.maintenanceTypes, type];
     setEntryForm((f) => ({ ...f, maintenanceTypes: next }));
   };
+
+  const styles = createStyles(isDark);
 
   return (
     <View style={styles.container}>
@@ -389,29 +405,83 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default" }) {
       {/* ── Modal: Bakım Türü Seç ─────────────────────────────── */}
       <Modal visible={showMaintenanceModal} transparent animationType="slide" onRequestClose={() => setShowMaintenanceModal(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
+          <View style={[styles.modalBox, { flexDirection: "column", height: "90%" }]}>
             <Text style={styles.modalTitle}>{i.selectMaintType}</Text>
-            <FlatList
-              data={MAINTENANCE_TYPES}
-              keyExtractor={(item) => item}
-              showsVerticalScrollIndicator={false}
-              style={styles.maintenanceTypeList}
-              contentContainerStyle={styles.maintenanceTypeListContent}
-              renderItem={({ item: type }) => {
-                const isSelected = entryForm.maintenanceTypes.includes(type);
-                return (
-                  <Pressable
-                    style={[styles.checkboxItem, isSelected && styles.checkboxItemSelected]}
-                    onPress={() => toggleMaintenanceType(type)}
-                  >
-                    <Text style={styles.checkboxBox}>{isSelected ? "☑" : "☐"}</Text>
-                    <Text style={[styles.checkboxLabel, isSelected && styles.checkboxLabelSelected]}>
-                      {type}
-                    </Text>
-                  </Pressable>
-                );
-              }}
-            />
+
+            {/* Manuel Giriş Bölümü */}
+            <View style={{ paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#1D445A" }}>
+              <Text style={styles.inputLabel}>Yeni tür ekle:</Text>
+              <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                  placeholder="Örn: Motor Temizliği"
+                  placeholderTextColor="#4A7A94"
+                  value={manualMaintenanceInput}
+                  onChangeText={setManualMaintenanceInput}
+                />
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.addTypeBtn,
+                    pressed && { opacity: 0.7 }
+                  ]}
+                  onPress={() => {
+                    const trimmed = manualMaintenanceInput.trim();
+                    if (trimmed && !entryForm.maintenanceTypes.includes(trimmed)) {
+                      toggleMaintenanceType(trimmed);
+                      setManualMaintenanceInput("");
+                    }
+                  }}
+                >
+                  <Text style={styles.addTypeBtnText}>EKLE</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Seçili Türler */}
+            {entryForm.maintenanceTypes.length > 0 && (
+              <View style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#1D445A" }}>
+                <Text style={styles.inputLabel}>Seçili türler:</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  {entryForm.maintenanceTypes.map((type) => (
+                    <Pressable
+                      key={type}
+                      onPress={() => toggleMaintenanceType(type)}
+                      style={{ backgroundColor: "#1B7FAB", borderRadius: 16, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4 }}
+                    >
+                      <Text style={{ color: "#F2FAFF", fontSize: 12, fontWeight: "600" }}>{type}</Text>
+                      <Text style={{ color: "#F2FAFF", fontSize: 10 }}>✕</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* DB Türleri Listesi */}
+            <View style={{ flex: 1, paddingTop: 12 }}>
+              <Text style={[styles.inputLabel, { marginBottom: 8 }]}>Önceden tanımlanmış:</Text>
+              <FlatList
+                data={maintenanceTypeOptions}
+                keyExtractor={(item) => item}
+                showsVerticalScrollIndicator={true}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 10 }}
+                renderItem={({ item: type }) => {
+                  const isSelected = entryForm.maintenanceTypes.includes(type);
+                  return (
+                    <Pressable
+                      style={[styles.checkboxItem, isSelected && styles.checkboxItemSelected]}
+                      onPress={() => toggleMaintenanceType(type)}
+                    >
+                      <Text style={styles.checkboxBox}>{isSelected ? "☑" : "☐"}</Text>
+                      <Text style={[styles.checkboxLabel, isSelected && styles.checkboxLabelSelected]}>
+                        {type}
+                      </Text>
+                    </Pressable>
+                  );
+                }}
+              />
+            </View>
+
             <Pressable
               style={styles.maintenanceModalDoneBtn}
               onPress={() => setShowMaintenanceModal(false)}
@@ -425,7 +495,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default" }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (isDark) => StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16, paddingVertical: 12 },
 
   emptyRefreshWrap: { flex: 1 },
@@ -435,19 +505,19 @@ const styles = StyleSheet.create({
   vehicleRowContent: { gap: 10, paddingVertical: 4, alignItems: "center" },
   vehicleChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#0F2331", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: "#274B61"
+    backgroundColor: isDark ? "#0F2331" : "#FFFFFF", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1, borderColor: isDark ? "#274B61" : "#C7D9E5"
   },
-  vehicleChipActive: { backgroundColor: "#133246", borderColor: "#3B8CB4" },
+  vehicleChipActive: { backgroundColor: isDark ? "#133246" : "#DCEEF9", borderColor: isDark ? "#3B8CB4" : "#1B7FAB" },
   vehicleChipIcon: { fontSize: 16 },
-  vehicleChipText: { color: "#B2CFDF", fontWeight: "600", fontSize: 13 },
-  vehicleChipTextActive: { color: "#D4ECFA" },
-  vehiclePlate: { color: "#7297AB", fontSize: 11, marginTop: 1 },
+  vehicleChipText: { color: isDark ? "#B2CFDF" : "#47657A", fontWeight: "600", fontSize: 13 },
+  vehicleChipTextActive: { color: isDark ? "#D4ECFA" : "#12384D" },
+  vehiclePlate: { color: isDark ? "#7297AB" : "#5A7588", fontSize: 11, marginTop: 1 },
 
   tableCard: {
-    backgroundColor: "#0C1F2C",
+    backgroundColor: isDark ? "#0C1F2C" : "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#1D4258",
+    borderColor: isDark ? "#1D4258" : "#C7D9E5",
     borderRadius: 14,
     padding: 8,
     marginBottom: 72,
@@ -457,16 +527,16 @@ const styles = StyleSheet.create({
 
   gridHeader: {
     flexDirection: "row",
-    backgroundColor: "#133246",
+    backgroundColor: isDark ? "#133246" : "#EAF3F9",
     paddingHorizontal: 6,
     paddingVertical: 9,
     borderRadius: 10,
     marginBottom: 6,
   },
-  gridHeaderCell: { color: "#9BC3D8", fontSize: 11, fontWeight: "700", textAlign: "center" },
+  gridHeaderCell: { color: isDark ? "#9BC3D8" : "#4A7588", fontSize: 11, fontWeight: "700", textAlign: "center" },
   gridRow: {
     flexDirection: "row",
-    backgroundColor: "#102737",
+    backgroundColor: isDark ? "#102737" : "#F8FCFF",
     paddingHorizontal: 6,
     paddingVertical: 10,
     marginBottom: 6,
@@ -474,36 +544,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   gridRowAlt: {
-    backgroundColor: "#0A1B26",
+    backgroundColor: isDark ? "#0A1B26" : "#F0F6FA",
   },
-  gridCell: { color: "#D3ECFB", fontSize: 12, fontWeight: "500", textAlign: "center" },
+  gridCell: { color: isDark ? "#D3ECFB" : "#163041", fontSize: 12, fontWeight: "500", textAlign: "center" },
 
   rowActions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 4 },
   rowIconBtn: {
     width: 26,
     height: 26,
     borderRadius: 8,
-    backgroundColor: "#0B1C28",
+    backgroundColor: isDark ? "#0B1C28" : "#F5FAFE",
     borderWidth: 1,
-    borderColor: "#21475D",
+    borderColor: isDark ? "#21475D" : "#C7D9E5",
     alignItems: "center",
     justifyContent: "center",
   },
-  rowEditIcon: { color: "#D8ECF7", fontSize: 12, fontWeight: "700" },
-  rowDeleteIcon: { color: "#F68A8A", fontSize: 12, fontWeight: "700" },
+  rowEditIcon: { color: isDark ? "#D8ECF7" : "#1B7FAB", fontSize: 12, fontWeight: "700" },
+  rowDeleteIcon: { color: isDark ? "#F68A8A" : "#E14C4C", fontSize: 12, fontWeight: "700" },
 
   emptyState: {
     marginTop: 20,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: "#0D2230",
+    backgroundColor: isDark ? "#0D2230" : "#F5FAFE",
     borderWidth: 1,
-    borderColor: "#1E465D",
+    borderColor: isDark ? "#1E465D" : "#C7D9E5",
     alignItems: "center",
   },
   emptyStateIcon: { fontSize: 36, marginBottom: 8 },
-  emptyStateText: { color: "#D0E5F2", fontSize: 14, fontWeight: "700" },
-  emptyStateSub: { color: "#96B8CC", fontSize: 12, marginTop: 6 },
+  emptyStateText: { color: isDark ? "#D0E5F2" : "#5A7588", fontSize: 14, fontWeight: "700" },
+  emptyStateSub: { color: isDark ? "#96B8CC" : "#7B95A8", fontSize: 12, marginTop: 6 },
 
   fab: {
     backgroundColor: "#1B7FAB",
@@ -516,71 +586,71 @@ const styles = StyleSheet.create({
 
   modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end" },
   modalBox: {
-    backgroundColor: "#0F2838",
+    backgroundColor: isDark ? "#0F2838" : "#F8FCFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 18,
     borderTopWidth: 1,
-    borderColor: "#1D445A",
+    borderColor: isDark ? "#1D445A" : "#C7D9E5",
     maxHeight: "90%",
   },
-  modalTitle: { color: "#F0F9FF", fontSize: 18, fontWeight: "800", marginBottom: 12 },
+  modalTitle: { color: isDark ? "#F0F9FF" : "#12384D", fontSize: 18, fontWeight: "800", marginBottom: 12 },
 
   input: {
-    backgroundColor: "#0D2230",
+    backgroundColor: isDark ? "#0D2230" : "#FFFFFF",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1E465D",
-    color: "#E3F1F9",
+    borderColor: isDark ? "#1E465D" : "#C7D9E5",
+    color: isDark ? "#E3F1F9" : "#163041",
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 12,
     fontSize: 14,
   },
-  inputLabel: { color: "#AFCBDD", fontSize: 12, fontWeight: "700", marginBottom: 8, marginTop: 4 },
-  datePickerText: { color: "#E3F1F9", fontSize: 14 },
-  datePickerPlaceholder: { color: "#4A7A94" },
+  inputLabel: { color: isDark ? "#AFCBDD" : "#5A7588", fontSize: 12, fontWeight: "700", marginBottom: 8, marginTop: 4 },
+  datePickerText: { color: isDark ? "#E3F1F9" : "#163041", fontSize: 14 },
+  datePickerPlaceholder: { color: isDark ? "#4A7A94" : "#9ABFD2" },
 
   dropdownBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#0D2230",
+    backgroundColor: isDark ? "#0D2230" : "#FFFFFF",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1E465D",
-    color: "#E3F1F9",
+    borderColor: isDark ? "#1E465D" : "#C7D9E5",
+    color: isDark ? "#E3F1F9" : "#163041",
     paddingHorizontal: 12,
     paddingVertical: 11,
     marginBottom: 12,
   },
-  dropdownBtnText: { color: "#E3F1F9", fontSize: 14, fontWeight: "500" },
+  dropdownBtnText: { color: isDark ? "#E3F1F9" : "#163041", fontSize: 14, fontWeight: "500" },
 
   selectedTypesBox: {
-    backgroundColor: "#12384D",
+    backgroundColor: isDark ? "#12384D" : "#DCEEF9",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#3B8CB4",
+    borderColor: isDark ? "#3B8CB4" : "#1B7FAB",
     padding: 10,
     marginBottom: 12,
   },
-  selectedTypesText: { color: "#DDF4FF", fontSize: 12, fontWeight: "500", lineHeight: 18 },
+  selectedTypesText: { color: isDark ? "#DDF4FF" : "#0F3B52", fontSize: 12, fontWeight: "500", lineHeight: 18 },
 
   checkboxGroup: { marginBottom: 12, gap: 8 },
   checkboxItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0D2230",
+    backgroundColor: isDark ? "#0D2230" : "#F5FAFE",
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: "#1E465D",
+    borderColor: isDark ? "#1E465D" : "#C7D9E5",
   },
-  checkboxItemSelected: { borderColor: "#3B8CB4", backgroundColor: "#12384D" },
-  checkboxBox: { fontSize: 16, marginRight: 8, color: "#3B8CB4" },
-  checkboxLabel: { color: "#B7D2E2", fontSize: 13, fontWeight: "500", flex: 1 },
-  checkboxLabelSelected: { color: "#DDF4FF", fontWeight: "600" },
+  checkboxItemSelected: { borderColor: isDark ? "#3B8CB4" : "#1B7FAB", backgroundColor: isDark ? "#12384D" : "#DCEEF9" },
+  checkboxBox: { fontSize: 16, marginRight: 8, color: isDark ? "#3B8CB4" : "#1B7FAB" },
+  checkboxLabel: { color: isDark ? "#B7D2E2" : "#5A7588", fontSize: 13, fontWeight: "500", flex: 1 },
+  checkboxLabelSelected: { color: isDark ? "#DDF4FF" : "#12384D", fontWeight: "600" },
 
   emptyStateInline: { alignItems: "center", justifyContent: "center", paddingVertical: 24 },
 
@@ -592,6 +662,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
+  },
+  addTypeBtn: {
+    backgroundColor: "#1B7FAB",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addTypeBtnText: {
+    color: "#F2FAFF",
+    fontWeight: "800",
+    fontSize: 12,
   },
 
   modalBtnGroup: { flexDirection: "row", gap: 8, marginTop: 12 },
@@ -605,10 +688,10 @@ const styles = StyleSheet.create({
   modalBtnSaveText: { color: "#F2FAFF", fontWeight: "800", fontSize: 14 },
   modalBtnCancel: {
     flex: 1,
-    backgroundColor: "#1C4B5E",
+    backgroundColor: isDark ? "#1C4B5E" : "#E8EFF6",
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
   },
-  modalBtnCancelText: { color: "#9CBFD2", fontWeight: "800", fontSize: 14 },
+  modalBtnCancelText: { color: isDark ? "#9CBFD2" : "#5A7588", fontWeight: "800", fontSize: 14 },
 });

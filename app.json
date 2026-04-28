@@ -4,6 +4,10 @@
 		"slug": "benzin",
 		"version": "1.0.0",
 		"orientation": "portrait",
+		"web": {
+			"favicon": "./assets/favicon.png",
+			"buildDir": ".web"
+		},
 		"userInterfaceStyle": "light",
 		"assetBundlePatterns": [
 			"**/*"

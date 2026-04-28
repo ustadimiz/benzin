@@ -244,7 +244,11 @@ export async function softDeleteAccount() {
     lastError = error;
 
     const msg = (error.message || "").toLowerCase();
-    const notFound = msg.includes("function not found") || msg.includes("failed to send a request") || msg.includes("non-2xx");
+    const status = error?.context?.status;
+    const notFound =
+      status === 404 ||
+      msg.includes("function not found") ||
+      msg.includes("failed to send a request");
     if (!notFound) {
       throw new Error(`AUTH_DETAIL:${getErrorText(error, "Account delete failed")}`);
     }

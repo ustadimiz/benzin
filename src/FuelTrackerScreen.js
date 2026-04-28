@@ -139,8 +139,9 @@ function calcCrossEntryStats(entries, vehicleId) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-export default function FuelTrackerScreen({ lang = "tr", userId = "default" }) {
+export default function FuelTrackerScreen({ lang = "tr", userId = "default", themeMode = "dark" }) {
   const i = getT(lang);
+  const isDark = themeMode === "dark";
   const fuelLabels = { benzin: i.benzin, motorin: i.motorin, lpg: i.lpg };
 
   const [vehicles, setVehicles] = useState([]);
@@ -338,6 +339,8 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default" }) {
   const avgUnitPrice = totals.totalLitre > 0 ? totals.totalCost / totals.totalLitre : null;
 
   // ── Render ──────────────────────────────────────────────────────
+  const styles = createStyles(isDark);
+
   return (
     <View style={styles.container}>
 
@@ -648,83 +651,83 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default" }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (isDark) => StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16, paddingVertical: 12 },
   headerHintCard: {
-    backgroundColor: "#0E2736",
+    backgroundColor: isDark ? "#0E2736" : "#E8F4FA",
     borderWidth: 1,
-    borderColor: "#1A4056",
+    borderColor: isDark ? "#1A4056" : "#C7E0ED",
     borderRadius: 16,
     padding: 12,
     marginBottom: 10
   },
-  headerHintTitle: { color: "#E8F5FD", fontSize: 16, fontWeight: "700" },
-  headerHintText: { color: "#9BBBCF", fontSize: 12, marginTop: 2 },
+  headerHintTitle: { color: isDark ? "#E8F5FD" : "#0F3B52", fontSize: 16, fontWeight: "700" },
+  headerHintText: { color: isDark ? "#9BBBCF" : "#4A7588", fontSize: 12, marginTop: 2 },
 
   // Araç seçici
   vehicleRow: { maxHeight: 78, marginBottom: 12 },
   vehicleRowContent: { gap: 10, paddingVertical: 6, alignItems: "center", paddingRight: 8 },
   vehicleChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#0F2331", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: "#274B61"
+    backgroundColor: isDark ? "#0F2331" : "#FFFFFF", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1, borderColor: isDark ? "#274B61" : "#C7D9E5"
   },
-  vehicleChipActive: { backgroundColor: "#133246", borderColor: "#4FAED9" },
+  vehicleChipActive: { backgroundColor: isDark ? "#133246" : "#DCEEF9", borderColor: isDark ? "#4FAED9" : "#1B7FAB" },
   vehicleChipIcon: { fontSize: 16 },
-  vehicleChipText: { color: "#B2CFDF", fontWeight: "600", fontSize: 13 },
-  vehicleChipTextActive: { color: "#D4ECFA" },
-  vehiclePlate: { color: "#7297AB", fontSize: 11, marginTop: 1 },
+  vehicleChipText: { color: isDark ? "#B2CFDF" : "#47657A", fontWeight: "600", fontSize: 13 },
+  vehicleChipTextActive: { color: isDark ? "#D4ECFA" : "#12384D" },
+  vehiclePlate: { color: isDark ? "#7297AB" : "#5A7588", fontSize: 11, marginTop: 1 },
   addVehicleBtn: {
-    backgroundColor: "#102433", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: "#2A4E65", borderStyle: "dashed"
+    backgroundColor: isDark ? "#102433" : "#F5FAFE", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1, borderColor: isDark ? "#2A4E65" : "#C7D9E5", borderStyle: "dashed"
   },
-  addVehicleBtnText: { color: "#8CC2DF", fontWeight: "700", fontSize: 13 },
+  addVehicleBtnText: { color: isDark ? "#8CC2DF" : "#4A7588", fontWeight: "700", fontSize: 13 },
 
   // İstatistik kutuları
   statsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   statBox: {
-    flex: 1, backgroundColor: "#102B3A", borderRadius: 16, paddingHorizontal: 10, paddingVertical: 12,
-    alignItems: "center", borderWidth: 1, borderColor: "#244D62"
+    flex: 1, backgroundColor: isDark ? "#102B3A" : "#FFFFFF", borderRadius: 16, paddingHorizontal: 10, paddingVertical: 12,
+    alignItems: "center", borderWidth: 1, borderColor: isDark ? "#244D62" : "#C7D9E5"
   },
-  statLabel: { color: "#9CBFD2", fontSize: 10, fontWeight: "600", textAlign: "center" },
-  statValue: { color: "#F0F9FF", fontSize: 14, fontWeight: "800", marginTop: 5 },
+  statLabel: { color: isDark ? "#9CBFD2" : "#5A7588", fontSize: 10, fontWeight: "600", textAlign: "center" },
+  statValue: { color: isDark ? "#F0F9FF" : "#12384D", fontSize: 14, fontWeight: "800", marginTop: 5 },
 
   // Grid
   tableCard: {
-    backgroundColor: "#0C1F2C",
+    backgroundColor: isDark ? "#0C1F2C" : "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#1D4258",
+    borderColor: isDark ? "#1D4258" : "#C7D9E5",
     borderRadius: 14,
     padding: 8,
     marginBottom: 72,
   },
   tableScrollContent: { paddingRight: 4 },
   gridHeader: {
-    flexDirection: "row", backgroundColor: "#133246", paddingHorizontal: 6,
+    flexDirection: "row", backgroundColor: isDark ? "#133246" : "#EAF3F9", paddingHorizontal: 6,
     paddingVertical: 9, borderRadius: 10, marginBottom: 6
   },
-  gridHeaderCell: { color: "#9BC3D8", fontSize: 11, fontWeight: "700", textAlign: "center" },
+  gridHeaderCell: { color: isDark ? "#9BC3D8" : "#4A7588", fontSize: 11, fontWeight: "700", textAlign: "center" },
   gridRow: {
-    flexDirection: "row", backgroundColor: "#102737", paddingHorizontal: 6,
+    flexDirection: "row", backgroundColor: isDark ? "#102737" : "#F8FCFF", paddingHorizontal: 6,
     paddingVertical: 10, borderRadius: 10, marginBottom: 6,
-    borderWidth: 1, borderColor: "#1E4359", alignItems: "center"
+    borderWidth: 1, borderColor: isDark ? "#1E4359" : "#E0EAEF", alignItems: "center"
   },
-  gridRowAlt: { backgroundColor: "#0E2230", borderColor: "#1A3A4D" },
-  gridCell: { color: "#D4E8F4", fontSize: 11, textAlign: "center" },
+  gridRowAlt: { backgroundColor: isDark ? "#0E2230" : "#F0F6FA", borderColor: isDark ? "#1A3A4D" : "#D9E7F0" },
+  gridCell: { color: isDark ? "#D4E8F4" : "#163041", fontSize: 11, textAlign: "center" },
   gridCellLeft: { textAlign: "left" },
   rowActions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 4 },
   rowIconBtn: {
     width: 26,
     height: 26,
     borderRadius: 8,
-    backgroundColor: "#0B1C28",
+    backgroundColor: isDark ? "#0B1C28" : "#F5FAFE",
     borderWidth: 1,
-    borderColor: "#21475D",
+    borderColor: isDark ? "#21475D" : "#C7D9E5",
     alignItems: "center",
     justifyContent: "center",
   },
-  rowEditIcon: { color: "#D8ECF7", fontSize: 12, fontWeight: "700" },
-  rowDeleteIcon: { color: "#F68A8A", fontSize: 12, fontWeight: "700" },
+  rowEditIcon: { color: isDark ? "#D8ECF7" : "#1B7FAB", fontSize: 12, fontWeight: "700" },
+  rowDeleteIcon: { color: isDark ? "#F68A8A" : "#E14C4C", fontSize: 12, fontWeight: "700" },
   emptyStateInline: { alignItems: "center", justifyContent: "center", paddingVertical: 24 },
   kmCell: { lineHeight: 16 },
 
@@ -739,41 +742,41 @@ const styles = StyleSheet.create({
   // Boş durum
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 50 },
   emptyStateIcon: { fontSize: 48, marginBottom: 12 },
-  emptyStateText: { color: "#A7C7D9", fontSize: 16, fontWeight: "700" },
-  emptyStateSub: { color: "#749AAF", fontSize: 13, marginTop: 6 },
+  emptyStateText: { color: isDark ? "#A7C7D9" : "#5A7588", fontSize: 16, fontWeight: "700" },
+  emptyStateSub: { color: isDark ? "#749AAF" : "#7B95A8", fontSize: 13, marginTop: 6 },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end" },
   modalScrollContent: { justifyContent: "flex-end", flexGrow: 1 },
   modalBox: {
-    backgroundColor: "#0F2838", borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 22, borderTopWidth: 1, borderColor: "#1D445A"
+    backgroundColor: isDark ? "#0F2838" : "#F8FCFF", borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 22, borderTopWidth: 1, borderColor: isDark ? "#1D445A" : "#C7D9E5"
   },
-  modalTitle: { color: "#F0F9FF", fontSize: 20, fontWeight: "800", marginBottom: 6 },
-  modalVehicleLabel: { color: "#96C2D9", fontSize: 13, marginBottom: 14 },
-  inputLabel: { color: "#9DBED2", fontSize: 12, fontWeight: "700", marginBottom: 6, marginTop: 4 },
+  modalTitle: { color: isDark ? "#F0F9FF" : "#12384D", fontSize: 20, fontWeight: "800", marginBottom: 6 },
+  modalVehicleLabel: { color: isDark ? "#96C2D9" : "#4A7588", fontSize: 13, marginBottom: 14 },
+  inputLabel: { color: isDark ? "#9DBED2" : "#5A7588", fontSize: 12, fontWeight: "700", marginBottom: 6, marginTop: 4 },
   input: {
-    backgroundColor: "#0A1F2D", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    color: "#F0F9FF", fontSize: 14, borderWidth: 1, borderColor: "#21485E", marginBottom: 10
+    backgroundColor: isDark ? "#0A1F2D" : "#FFFFFF", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+    color: isDark ? "#F0F9FF" : "#163041", fontSize: 14, borderWidth: 1, borderColor: isDark ? "#21485E" : "#C7D9E5", marginBottom: 10
   },
-  datePickerText: { color: "#F0F9FF", fontSize: 14 },
-  datePickerPlaceholder: { color: "#4A7A94" },
+  datePickerText: { color: isDark ? "#F0F9FF" : "#163041", fontSize: 14 },
+  datePickerPlaceholder: { color: isDark ? "#4A7A94" : "#9ABFD2" },
   fuelTypeRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
   fuelTypeChip: {
     flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: "center",
-    borderWidth: 1, borderColor: "#2A4C60", backgroundColor: "#0A1F2D"
+    borderWidth: 1, borderColor: isDark ? "#2A4C60" : "#C7D9E5", backgroundColor: isDark ? "#0A1F2D" : "#FFFFFF"
   },
-  fuelTypeChipText: { color: "#AAC8D9", fontWeight: "700", fontSize: 13 },
+  fuelTypeChipText: { color: isDark ? "#AAC8D9" : "#5A7588", fontWeight: "700", fontSize: 13 },
   modalBtns: { flexDirection: "row", gap: 8, marginTop: 12 },
   modalBtnCancel: {
     flex: 1,
-    backgroundColor: "#1C4B5E",
+    backgroundColor: isDark ? "#1C4B5E" : "#E8EFF6",
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
   },
-  modalBtnCancelText: { color: "#9CBFD2", fontWeight: "800", fontSize: 14 },
-  modalBtnDelete: { backgroundColor: "#C3362E" },
+  modalBtnCancelText: { color: isDark ? "#9CBFD2" : "#5A7588", fontWeight: "800", fontSize: 14 },
+  modalBtnDelete: { backgroundColor: isDark ? "#C3362E" : "#E14C4C" },
   modalBtnSave: {
     flex: 1,
     backgroundColor: "#1B7FAB",

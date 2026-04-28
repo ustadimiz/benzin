@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Alert, FlatList, Linking, Modal, Pressable, SafeAreaView, StyleSheet, Switch, Text, View } from "react-native";
+import { Platform, Dimensions } from "react-native";
 import FuelTrackerScreen from "./src/FuelTrackerScreen";
 import PricesScreen from "./src/PricesScreen";
 import MaintenanceScreen from "./src/MaintenanceScreen";
@@ -133,43 +134,63 @@ export default function App() {
     }
   };
 
+  const performLogout = async () => {
+    await authLogout();
+    setUser(null);
+    setShowSettings(false);
+  };
+
+  const performDeleteAccount = async () => {
+    setAccountActionLoading(true);
+    try {
+      await authSoftDeleteAccount();
+      await clearLocalUserData(user.id);
+      setUser(null);
+      setShowSettings(false);
+      Alert.alert(i.infoTitle, i.deleteAccountSuccess);
+    } catch (error) {
+      if (error?.message === "ACCOUNT_DELETE_NOT_AVAILABLE") {
+        Alert.alert(i.errorTitle, i.deleteAccountUnavailable);
+      } else {
+        Alert.alert(i.errorTitle, i.deleteAccountError);
+      }
+    } finally {
+      setAccountActionLoading(false);
+    }
+  };
+
   const handleLogout = () => {
+    // React Native Web does not reliably support multi-button Alert callbacks.
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const confirmed = window.confirm(`${i.logoutConfirmTitle}\n\n${i.logoutConfirmMsg}`);
+      if (confirmed) {
+        performLogout();
+      }
+      return;
+    }
+
     Alert.alert(i.logoutConfirmTitle, i.logoutConfirmMsg, [
       { text: i.cancel, style: "cancel" },
-      {
-        text: i.logout, style: "destructive", onPress: async () => {
-          await authLogout();
-          setUser(null);
-          setShowSettings(false);
-        }
-      },
+      { text: i.logout, style: "destructive", onPress: performLogout },
     ]);
   };
 
   const handleDeleteAccount = () => {
+    // React Native Web does not reliably support multi-button Alert callbacks.
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const confirmed = window.confirm(`${i.deleteAccountConfirmTitle}\n\n${i.deleteAccountConfirmMsg}`);
+      if (confirmed) {
+        performDeleteAccount();
+      }
+      return;
+    }
+
     Alert.alert(i.deleteAccountConfirmTitle, i.deleteAccountConfirmMsg, [
       { text: i.cancel, style: "cancel" },
       {
         text: i.deleteAccount,
         style: "destructive",
-        onPress: async () => {
-          setAccountActionLoading(true);
-          try {
-            await authSoftDeleteAccount();
-            await clearLocalUserData(user.id);
-            setUser(null);
-            setShowSettings(false);
-            Alert.alert(i.infoTitle, i.deleteAccountSuccess);
-          } catch (error) {
-            if (error?.message === "ACCOUNT_DELETE_NOT_AVAILABLE") {
-              Alert.alert(i.errorTitle, i.deleteAccountUnavailable);
-            } else {
-              Alert.alert(i.errorTitle, i.deleteAccountError);
-            }
-          } finally {
-            setAccountActionLoading(false);
-          }
-        },
+        onPress: performDeleteAccount,
       },
     ]);
   };

@@ -17,17 +17,51 @@ function canUseCloudSync(userId) {
   return Boolean(userId && userId !== "default" && userId !== "guest-local" && isSupabaseConfigured);
 }
 
+async function resolveCloudUserId(userId) {
+  if (!isSupabaseConfigured) return userId;
+  if (userId === "guest-local" || userId === "default") return userId;
+
+  try {
+    const supabase = getSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // On web, prefer the authenticated session user id if available.
+    return user?.id || userId;
+  } catch {
+    return userId;
+  }
+}
+
 function cloneFuelState(state = {}) {
+  const normalized = normalizeStatePayload(state);
   return {
-    vehicles: Array.isArray(state.vehicles) ? [...state.vehicles] : [],
-    entries: Array.isArray(state.entries) ? [...state.entries] : [],
+    vehicles: Array.isArray(normalized.vehicles) ? [...normalized.vehicles] : [],
+    entries: Array.isArray(normalized.entries) ? [...normalized.entries] : [],
   };
 }
 
 function cloneMaintenanceState(state = {}) {
+  const normalized = normalizeStatePayload(state);
   return {
-    entries: Array.isArray(state.entries) ? [...state.entries] : [],
+    entries: Array.isArray(normalized.entries) ? [...normalized.entries] : [],
   };
+}
+
+function normalizeStatePayload(state) {
+  if (!state) return {};
+
+  if (typeof state === "string") {
+    try {
+      const parsed = JSON.parse(state);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  return typeof state === "object" ? state : {};
 }
 
 function parseJson(raw) {
@@ -72,6 +106,22 @@ function pickPreferredRecord(localRecord, remoteRecord, hasData) {
   if (remoteTime !== null) return remoteRecord;
 
   return hasData(localRecord.state) ? localRecord : remoteRecord;
+}
+
+async function syncRemoteFuelRecordQuietly(userId, state, updatedAt) {
+  try {
+    await writeRemoteFuelRecord(userId, state, updatedAt);
+  } catch (error) {
+    console.warn("Fuel cloud sync failed", error?.message || error);
+  }
+}
+
+async function syncRemoteMaintenanceRecordQuietly(userId, state, updatedAt) {
+  try {
+    await writeRemoteMaintenanceRecord(userId, state, updatedAt);
+  } catch (error) {
+    console.warn("Maintenance cloud sync failed", error?.message || error);
+  }
 }
 
 async function readLocalFuelRecord(userId) {
@@ -143,7 +193,12 @@ async function readRemoteSnapshot(userId) {
 }
 
 function buildRemoteFuelRecord(snapshot) {
-  if (snapshot?.is_deleted) {
+  const state = cloneFuelState(snapshot?.fuel_data);
+  const stateHasData = hasFuelStateData(state);
+
+  // Recovery path: if a stale soft-delete flag exists but payload has data,
+  // prefer the payload so users can still access their records.
+  if (snapshot?.is_deleted && !stateHasData) {
     return {
       source: "remote",
       state: cloneFuelState(),
@@ -153,18 +208,22 @@ function buildRemoteFuelRecord(snapshot) {
     };
   }
 
-  const state = cloneFuelState(snapshot?.fuel_data);
   return {
     source: "remote",
     state,
     updatedAt: snapshot?.fuel_updated_at || null,
     isLegacy: false,
-    hasData: hasFuelStateData(state),
+    hasData: stateHasData,
   };
 }
 
 function buildRemoteMaintenanceRecord(snapshot) {
-  if (snapshot?.is_deleted) {
+  const state = cloneMaintenanceState(snapshot?.maintenance_data);
+  const stateHasData = hasMaintenanceStateData(state);
+
+  // Recovery path: if a stale soft-delete flag exists but payload has data,
+  // prefer the payload so users can still access their records.
+  if (snapshot?.is_deleted && !stateHasData) {
     return {
       source: "remote",
       state: cloneMaintenanceState(),
@@ -174,13 +233,12 @@ function buildRemoteMaintenanceRecord(snapshot) {
     };
   }
 
-  const state = cloneMaintenanceState(snapshot?.maintenance_data);
   return {
     source: "remote",
     state,
     updatedAt: snapshot?.maintenance_updated_at || null,
     isLegacy: false,
-    hasData: hasMaintenanceStateData(state),
+    hasData: stateHasData,
   };
 }
 
@@ -188,76 +246,98 @@ async function writeRemoteFuelRecord(userId, state, updatedAt = new Date().toISO
   if (!canUseCloudSync(userId)) return;
 
   const supabase = getSupabaseClient();
-  await supabase.from(CLOUD_TABLE).upsert(
+  const { error } = await supabase.from(CLOUD_TABLE).upsert(
     {
       user_id: userId,
       fuel_data: cloneFuelState(state),
       fuel_updated_at: updatedAt,
+      is_deleted: false,
+      deleted_at: null,
       updated_at: updatedAt,
     },
     { onConflict: "user_id" }
   );
+
+  if (error) {
+    throw new Error(error.message || "Fuel cloud upsert failed");
+  }
 }
 
 async function writeRemoteMaintenanceRecord(userId, state, updatedAt = new Date().toISOString()) {
   if (!canUseCloudSync(userId)) return;
 
   const supabase = getSupabaseClient();
-  await supabase.from(CLOUD_TABLE).upsert(
+  const { error } = await supabase.from(CLOUD_TABLE).upsert(
     {
       user_id: userId,
       maintenance_data: cloneMaintenanceState(state),
       maintenance_updated_at: updatedAt,
+      is_deleted: false,
+      deleted_at: null,
       updated_at: updatedAt,
     },
     { onConflict: "user_id" }
   );
+
+  if (error) {
+    throw new Error(error.message || "Maintenance cloud upsert failed");
+  }
 }
 
 export async function loadFuelState(userId) {
-  const localRecord = await readLocalFuelRecord(userId);
+  const resolvedUserId = await resolveCloudUserId(userId);
+  const localRecord = await readLocalFuelRecord(resolvedUserId);
 
-  if (!canUseCloudSync(userId)) {
+  if (!canUseCloudSync(resolvedUserId)) {
     return localRecord.state;
   }
 
-  const remoteSnapshot = await readRemoteSnapshot(userId);
+  const remoteSnapshot = await readRemoteSnapshot(resolvedUserId);
   const remoteRecord = buildRemoteFuelRecord(remoteSnapshot);
   const preferred = pickPreferredRecord(localRecord, remoteRecord, hasFuelStateData);
 
   if (preferred.source === "remote" && remoteRecord.hasData) {
-    await writeLocalFuelRecord(userId, remoteRecord.state, remoteRecord.updatedAt || new Date().toISOString());
-  }
-
-  if (preferred.source === "local" && localRecord.hasData) {
-    await writeRemoteFuelRecord(userId, localRecord.state, localRecord.updatedAt || new Date().toISOString());
-  }
-
-  return preferred.state;
-}
-
-export async function loadMaintenanceState(userId) {
-  const localRecord = await readLocalMaintenanceRecord(userId);
-
-  if (!canUseCloudSync(userId)) {
-    return localRecord.state;
-  }
-
-  const remoteSnapshot = await readRemoteSnapshot(userId);
-  const remoteRecord = buildRemoteMaintenanceRecord(remoteSnapshot);
-  const preferred = pickPreferredRecord(localRecord, remoteRecord, hasMaintenanceStateData);
-
-  if (preferred.source === "remote" && remoteRecord.hasData) {
-    await writeLocalMaintenanceRecord(
-      userId,
+    await writeLocalFuelRecord(
+      resolvedUserId,
       remoteRecord.state,
       remoteRecord.updatedAt || new Date().toISOString()
     );
   }
 
   if (preferred.source === "local" && localRecord.hasData) {
-    await writeRemoteMaintenanceRecord(
-      userId,
+    await syncRemoteFuelRecordQuietly(
+      resolvedUserId,
+      localRecord.state,
+      localRecord.updatedAt || new Date().toISOString()
+    );
+  }
+
+  return preferred.state;
+}
+
+export async function loadMaintenanceState(userId) {
+  const resolvedUserId = await resolveCloudUserId(userId);
+  const localRecord = await readLocalMaintenanceRecord(resolvedUserId);
+
+  if (!canUseCloudSync(resolvedUserId)) {
+    return localRecord.state;
+  }
+
+  const remoteSnapshot = await readRemoteSnapshot(resolvedUserId);
+  const remoteRecord = buildRemoteMaintenanceRecord(remoteSnapshot);
+  const preferred = pickPreferredRecord(localRecord, remoteRecord, hasMaintenanceStateData);
+
+  if (preferred.source === "remote" && remoteRecord.hasData) {
+    await writeLocalMaintenanceRecord(
+      resolvedUserId,
+      remoteRecord.state,
+      remoteRecord.updatedAt || new Date().toISOString()
+    );
+  }
+
+  if (preferred.source === "local" && localRecord.hasData) {
+    await syncRemoteMaintenanceRecordQuietly(
+      resolvedUserId,
       localRecord.state,
       localRecord.updatedAt || new Date().toISOString()
     );
@@ -267,16 +347,18 @@ export async function loadMaintenanceState(userId) {
 }
 
 export async function saveFuelState(userId, state) {
+  const resolvedUserId = await resolveCloudUserId(userId);
   const updatedAt = new Date().toISOString();
-  const payload = await writeLocalFuelRecord(userId, state, updatedAt);
-  await writeRemoteFuelRecord(userId, payload, updatedAt);
+  const payload = await writeLocalFuelRecord(resolvedUserId, state, updatedAt);
+  await writeRemoteFuelRecord(resolvedUserId, payload, updatedAt);
   return payload;
 }
 
 export async function saveMaintenanceState(userId, state) {
+  const resolvedUserId = await resolveCloudUserId(userId);
   const updatedAt = new Date().toISOString();
-  const payload = await writeLocalMaintenanceRecord(userId, state, updatedAt);
-  await writeRemoteMaintenanceRecord(userId, payload, updatedAt);
+  const payload = await writeLocalMaintenanceRecord(resolvedUserId, state, updatedAt);
+  await writeRemoteMaintenanceRecord(resolvedUserId, payload, updatedAt);
   return payload;
 }
 
@@ -290,4 +372,24 @@ export function getEmptyFuelState() {
 
 export function getEmptyMaintenanceState() {
   return cloneMaintenanceState();
+}
+
+export async function loadMaintenanceTypes() {
+  if (!canUseCloudSync("dummy")) {
+    return [];
+  }
+
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("maintenance_types")
+      .select("name")
+      .order("name", { ascending: true });
+
+    if (!error && Array.isArray(data)) {
+      return data.map((row) => row.name);
+    }
+  } catch {}
+
+  return [];
 }

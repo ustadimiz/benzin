@@ -7,10 +7,13 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "set BROWSER=none&& expo start --web --port 8082",
+    "export:web": "expo export --platform web --output-dir dist",
+    "deploy:web:prep": "npm run export:web"
   },
   "dependencies": {
     "@babel/runtime": "^7.25.9",
+    "@expo/metro-runtime": "~3.2.3",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/datetimepicker": "8.2.0",
     "@supabase/supabase-js": "2.49.8",
@@ -18,8 +21,10 @@
     "expo": "~51.0.39",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
+    "react-dom": "18.2.0",
     "react-native": "0.74.5",
     "react-native-url-polyfill": "^2.0.0",
+    "react-native-web": "~0.19.10",
     "typescript": "~5.3.3"
   },
   "devDependencies": {

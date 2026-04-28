@@ -100,6 +100,33 @@ create policy "Users can update their own app data"
 on public.user_app_data
 for update
 using (auth.uid() = user_id);
+
+create table if not exists public.maintenance_types (
+	id bigint primary key generated always as identity,
+	name text not null unique,
+	created_at timestamptz not null default now()
+);
+
+alter table public.maintenance_types enable row level security;
+
+drop policy if exists "Maintenance types are readable by everyone" on public.maintenance_types;
+
+create policy "Maintenance types are readable by everyone"
+on public.maintenance_types
+for select
+using (true);
+
+insert into public.maintenance_types (name) values
+	('Akü'), ('Antifriz'), ('Balata (Fren)'), ('Cam Silecekleri'), ('Differansiyel Yağı'),
+	('Dizel Filtresi'), ('Enjektör Temizliği'), ('Far Ampülü'), ('Filtre (Ayva)'),
+	('Fren Balata Ön'), ('Fren Balata Arka'), ('Fren Diskleri'), ('Fren Sıvısı'),
+	('Gaz Filtresi (LPG)'), ('Hava Filtresi'), ('Hidrolik Sıvı'), ('Işık Kontrol'),
+	('Karbüratör Temizliği'), ('Klç Takımı'), ('Kontrol Muayenesi'), ('Körükler'),
+	('Lastik Değişimi'), ('Lastik Onarımı'), ('Lastik Yönü'), ('Motor Yağı Değişimi'),
+	('Motor Yağı Filtresi'), ('Oto Elektrik'), ('Pamuk Filtre'), ('Radyatör Temizliği'),
+	('Sağlık Kontrol'), ('Şaft Onarımı'), ('Spark Plug (Bujiler)'), ('Şanzıman Yağı'),
+	('Tesisat Kontrol'), ('Türboşarj Servisi'), ('Valve Korektörü'), ('Yönetim Kontrol'),
+	('Zincir Gerimi') on conflict do nothing;
 ```
 
 3. Bu tablo ile yakit ve bakim verileri hem cihazda cache'lenir hem de kullanici hesabi altinda cloud'a yazilir. Kullanici yeni telefonda ayni hesapla giris yaptiginda en guncel veri otomatik olarak geri yuklenir.
@@ -141,9 +168,40 @@ Notlar:
 
 Bu proje su anda Node 18 ile uyumlu Expo SDK 51 surumune sabitlenmistir. Daha yeni Expo surumleri Node 20 isteyebilir.
 
+## Web Yayini (GitHub Pages)
+
+Bu repo artik GitHub Pages icin otomatik deploy workflow'u icerir:
+
+- [.github/workflows/deploy-web-pages.yml](.github/workflows/deploy-web-pages.yml)
+
+### Beklenen link formati
+
+Repo adi `aracdefterim` ise yayin linki su sekilde olur:
+
+`https://KULLANICI_ADI.github.io/aracdefterim`
+
+### Bir kere yapilacak ayar
+
+1. GitHub'da repo ayarlarina girin: Settings > Pages
+2. Source olarak `GitHub Actions` secin
+3. Bu repoya `main` branch'e push edin
+
+Workflow otomatik olarak web build alip yayinlayacaktir.
+
+### Lokal web export (opsiyonel)
+
+Istersen lokalde statik cikti almak icin:
+
+```bash
+npm run export:web
+```
+
+Bu komut web ciktisini `dist/` klasorune uretir.
+
 ## Supabase Keep-Alive (GitHub Actions)
 
 Supabase Free proje uykuya dusuyorsa, bu repodaki workflow otomatik ping atar:
+profiles tablosundan sadece 1 satır id oku 
 
 - [.github/workflows/supabase-keep-alive.yml](.github/workflows/supabase-keep-alive.yml)
 
