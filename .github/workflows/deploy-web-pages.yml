@@ -32,10 +32,12 @@ jobs:
         run: npm ci
 
       - name: Export Expo web build
-        run: npx expo export --platform web --output-dir dist --base-url /${{ github.event.repository.name }}/
+        run: npm run export:web
 
       - name: Prepare static hosting files
         run: |
+          REPO_BASE="/${{ github.event.repository.name }}"
+          sed -i "s|src=\"/|src=\"${REPO_BASE}/|g; s|href=\"/|href=\"${REPO_BASE}/|g" dist/index.html
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
 
