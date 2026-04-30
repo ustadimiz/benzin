@@ -588,32 +588,47 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
               value={searchText}
               onChangeText={setSearchText}
             />
-            <FlatList
-              data={getOrderedCities(searchText)}
-              keyExtractor={(item) => item}
-              style={styles.cityList}
-              initialNumToRender={20}
-              renderItem={({ item }) => {
-                const active = selectedCity === item;
-                return (
-                  <Pressable
-                    style={[
-                      styles.cityItem,
-                      { backgroundColor: C.cityItem, borderColor: C.cityItemBorder },
-                      active && { backgroundColor: C.cityItemActive, borderColor: C.cityItemActiveBorder }
-                    ]}
-                    onPress={() => {
-                      onSelectCity(item);
-                      setSearchText("");
-                    }}
-                  >
-                    <Text style={[styles.cityItemText, { color: C.cityItemText }, active && { color: C.cityItemTextActive }]}>
-                    {item === ALL_CITIES_KEY ? i.allCities : item}
-                  </Text>
-                  </Pressable>
-                );
-              }}
-            />
+            <View
+              style={[
+                styles.cityList,
+                {
+                  flexGrow: 0,
+                  flexShrink: 1,
+                  overflow: 'auto',
+                  maxHeight:
+                    Platform.OS === 'web'
+                      ? (window.innerHeight ? Math.max(180, window.innerHeight * 0.38) : 300)
+                      : 300,
+                  marginBottom: 10,
+                },
+              ]}
+            >
+              <FlatList
+                data={getOrderedCities(searchText)}
+                keyExtractor={(item) => item}
+                initialNumToRender={20}
+                renderItem={({ item }) => {
+                  const active = selectedCity === item;
+                  return (
+                    <Pressable
+                      style={[
+                        styles.cityItem,
+                        { backgroundColor: C.cityItem, borderColor: C.cityItemBorder },
+                        active && { backgroundColor: C.cityItemActive, borderColor: C.cityItemActiveBorder },
+                      ]}
+                      onPress={() => {
+                        onSelectCity(item);
+                        setSearchText("");
+                      }}
+                    >
+                      <Text style={[styles.cityItemText, { color: C.cityItemText }, active && { color: C.cityItemTextActive }]}>
+                        {item === ALL_CITIES_KEY ? i.allCities : item}
+                      </Text>
+                    </Pressable>
+                  );
+                }}
+              />
+            </View>
             <Pressable style={styles.closeModalBtn} onPress={() => { setShowCityModal(false); setSearchText(""); }}>
               <Text style={styles.closeModalText}>{i.close}</Text>
             </Pressable>
