@@ -335,7 +335,7 @@ const StationCard = memo(function StationCard({ item, selectedFuel, isFav, onTog
     <View style={[
       styles.stationCard,
       { backgroundColor: C.stationCard, borderColor: C.stationCardBorder },
-      numColumns > 1 && { flex: 1, marginHorizontal: 5 }
+      numColumns > 1 && { flex: 1, marginHorizontal: 5, maxWidth: numColumns === 2 ? "48%" : "32%" }
     ]}>
       <View style={styles.stationHead}>
         <View style={{ flex: 1 }}>
@@ -591,7 +591,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
             <FlatList
               data={getOrderedCities(searchText)}
               keyExtractor={(item) => item}
-              style={{ flex: 1 }}
+              style={styles.cityList}
               initialNumToRender={20}
               renderItem={({ item }) => {
                 const active = selectedCity === item;
@@ -708,9 +708,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 18,
     borderTopWidth: 1,
-    maxHeight: "70%",
+    maxHeight: "65%",
+    flexDirection: "column",
   },
   modalTitle: { fontSize: 18, fontWeight: "800", marginBottom: 10 },
+  cityList: { flexGrow: 0, flexShrink: 1 },
   searchInput: {
     borderRadius: 10,
     borderWidth: 1,
@@ -738,13 +740,14 @@ const styles = StyleSheet.create({
   closeModalText: { color: "#F2FAFF", fontWeight: "800", fontSize: 14 },
 
   // Responsive styles
-  filtersRowWide: { maxWidth: 400 },
-  cityCardWide: { maxWidth: 600 },
+  filtersRowWide: { maxWidth: 500 },
+  cityCardWide: { maxWidth: 700 },
   cityCardInnerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   cityPickerWide: { flex: 1 },
-  columnWrapper: { gap: 10 },
+  columnWrapper: { gap: 10, justifyContent: "flex-start" },
   modalBoxWide: {
     maxWidth: 500,
+    maxHeight: "65%",
     alignSelf: "center",
     width: "90%",
     borderRadius: 24,
