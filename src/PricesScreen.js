@@ -579,60 +579,62 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
 
       <Modal visible={showCityModal} transparent animationType="slide" onRequestClose={() => setShowCityModal(false)}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }, numColumns > 1 && styles.modalBoxWide]}>
-            <Text style={[styles.modalTitle, { color: C.modalTitle }]}>{i.selectCity}</Text>
-            <TextInput
-              style={[styles.searchInput, { backgroundColor: C.searchInput, borderColor: C.searchInputBorder, color: C.searchInputText }]}
-              placeholder={i.searchCity}
-              placeholderTextColor={C.searchPlaceholder}
-              value={searchText}
-              onChangeText={setSearchText}
-            />
-            <View
-              style={[
-                styles.cityList,
-                {
-                  flexGrow: 0,
-                  flexShrink: 1,
-                  overflow: 'auto',
-                  maxHeight:
-                    Platform.OS === 'web'
-                      ? (window.innerHeight ? Math.max(180, window.innerHeight * 0.38) : 300)
-                      : 300,
-                  marginBottom: 10,
-                },
-              ]}
-            >
-              <FlatList
-                data={getOrderedCities(searchText)}
-                keyExtractor={(item) => item}
-                initialNumToRender={20}
-                renderItem={({ item }) => {
-                  const active = selectedCity === item;
-                  return (
-                    <Pressable
-                      style={[
-                        styles.cityItem,
-                        { backgroundColor: C.cityItem, borderColor: C.cityItemBorder },
-                        active && { backgroundColor: C.cityItemActive, borderColor: C.cityItemActiveBorder },
-                      ]}
-                      onPress={() => {
-                        onSelectCity(item);
-                        setSearchText("");
-                      }}
-                    >
-                      <Text style={[styles.cityItemText, { color: C.cityItemText }, active && { color: C.cityItemTextActive }]}>
-                        {item === ALL_CITIES_KEY ? i.allCities : item}
-                      </Text>
-                    </Pressable>
-                  );
-                }}
+            <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }, numColumns > 1 && styles.modalBoxWide]}>
+              <Text style={[styles.modalTitle, { color: C.modalTitle }]}>{i.selectCity}</Text>
+              <TextInput
+                style={[styles.searchInput, { backgroundColor: C.searchInput, borderColor: C.searchInputBorder, color: C.searchInputText }]}
+                placeholder={i.searchCity}
+                placeholderTextColor={C.searchPlaceholder}
+                value={searchText}
+                onChangeText={setSearchText}
               />
+              <View
+                style={[
+                  styles.cityList,
+                  {
+                    flexGrow: 0,
+                    flexShrink: 1,
+                    overflow: 'auto',
+                    maxHeight:
+                      Platform.OS === 'web'
+                        ? (window.innerHeight ? Math.max(180, window.innerHeight * 0.38) : 300),
+                        : 300,
+                    marginBottom: 0,
+                  },
+                ]}
+              >
+                <FlatList
+                  data={getOrderedCities(searchText)}
+                  keyExtractor={(item) => item}
+                  initialNumToRender={20}
+                  renderItem={({ item }) => {
+                    const active = selectedCity === item;
+                    return (
+                      <Pressable
+                        style={[
+                          styles.cityItem,
+                          { backgroundColor: C.cityItem, borderColor: C.cityItemBorder },
+                          active && { backgroundColor: C.cityItemActive, borderColor: C.cityItemActiveBorder },
+                        ]}
+                        onPress={() => {
+                          onSelectCity(item);
+                          setSearchText("");
+                        }}
+                      >
+                        <Text style={[styles.cityItemText, { color: C.cityItemText }, active && { color: C.cityItemTextActive }]}>
+                          {item === ALL_CITIES_KEY ? i.allCities : item}
+                        </Text>
+                      </Pressable>
+                    );
+                  }}
+                />
+              </View>
+              <View style={{ paddingTop: 10, backgroundColor: 'transparent' }}>
+                <Pressable style={styles.closeModalBtn} onPress={() => { setShowCityModal(false); setSearchText(""); }}>
+                  <Text style={styles.closeModalText}>{i.close}</Text>
+                </Pressable>
+              </View>
             </View>
-            <Pressable style={styles.closeModalBtn} onPress={() => { setShowCityModal(false); setSearchText(""); }}>
-              <Text style={styles.closeModalText}>{i.close}</Text>
-            </Pressable>
-          </View>
         </View>
       </Modal>
     </View>
