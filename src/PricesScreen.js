@@ -597,7 +597,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
                     overflow: 'auto',
                     maxHeight:
                       Platform.OS === 'web'
-                        ? (window.innerHeight ? Math.max(180, window.innerHeight * 0.38) : 300),
+                        ? (typeof window !== 'undefined' && window.innerHeight ? Math.max(180, window.innerHeight * 0.38) : 300)
                         : 300,
                     marginBottom: 0,
                   },
