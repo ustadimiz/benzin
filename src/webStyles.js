@@ -49,6 +49,15 @@ export function injectWebStyles() {
       .modalBox {
         max-width: 500px !important;
         width: 95vw !important;
+        max-height: 58vh !important;
+        padding: 12px 8px 8px 8px !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .cityList {
+        overflow-y: auto !important;
+        max-height: 38vh !important;
+        margin-bottom: 10px !important;
       }
       .filtersRow {
         max-width: 500px !important;
@@ -77,6 +86,15 @@ export function injectWebStyles() {
       .modalBox {
         max-width: 95vw !important;
         width: 95vw !important;
+        max-height: 60vh !important;
+        padding: 10px 6px 6px 6px !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .cityList {
+        overflow-y: auto !important;
+        max-height: 38vh !important;
+        margin-bottom: 10px !important;
       }
       .filtersRow {
         max-width: 95vw !important;
