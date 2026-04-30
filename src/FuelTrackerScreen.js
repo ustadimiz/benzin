@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { t as getT } from "./i18n";
@@ -143,6 +144,9 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const i = getT(lang);
   const isDark = themeMode === "dark";
   const fuelLabels = { benzin: i.benzin, motorin: i.motorin, lpg: i.lpg };
+  const { width: windowWidth } = useWindowDimensions();
+  const isWide = windowWidth >= 768;
+  const isDesktop = windowWidth >= 1200;
 
   const [vehicles, setVehicles] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -342,7 +346,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const styles = createStyles(isDark);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop]}>
 
       {/* Araç Seçici */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehicleRow} contentContainerStyle={styles.vehicleRowContent}>
@@ -421,7 +425,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
             </View>
           )}
 
-          <View style={styles.tableCard}>
+          <View style={[styles.tableCard, isDesktop && styles.tableCardDesktop]}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContent}>
               <View style={{ minWidth: tableMinWidth }}>
                 {/* Grid başlığı */}
@@ -653,6 +657,8 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
 const createStyles = (isDark) => StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16, paddingVertical: 12 },
+  containerWide: { maxWidth: 960, alignSelf: "center", width: "100%" },
+  containerDesktop: { maxWidth: 1100, paddingHorizontal: 24 },
   headerHintCard: {
     backgroundColor: isDark ? "#0E2736" : "#E8F4FA",
     borderWidth: 1,
@@ -701,6 +707,7 @@ const createStyles = (isDark) => StyleSheet.create({
     padding: 8,
     marginBottom: 72,
   },
+  tableCardDesktop: { marginBottom: 24 },
   tableScrollContent: { paddingRight: 4 },
   gridHeader: {
     flexDirection: "row", backgroundColor: isDark ? "#133246" : "#EAF3F9", paddingHorizontal: 6,
@@ -746,11 +753,12 @@ const createStyles = (isDark) => StyleSheet.create({
   emptyStateSub: { color: isDark ? "#749AAF" : "#7B95A8", fontSize: 13, marginTop: 6 },
 
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end" },
-  modalScrollContent: { justifyContent: "flex-end", flexGrow: 1 },
+  modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end", alignItems: "center" },
+  modalScrollContent: { justifyContent: "flex-end", flexGrow: 1, width: "100%", maxWidth: 500 },
   modalBox: {
     backgroundColor: isDark ? "#0F2838" : "#F8FCFF", borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 22, borderTopWidth: 1, borderColor: isDark ? "#1D445A" : "#C7D9E5"
+    padding: 22, borderTopWidth: 1, borderColor: isDark ? "#1D445A" : "#C7D9E5",
+    width: "100%", maxWidth: 500, alignSelf: "center"
   },
   modalTitle: { color: isDark ? "#F0F9FF" : "#12384D", fontSize: 20, fontWeight: "800", marginBottom: 6 },
   modalVehicleLabel: { color: isDark ? "#96C2D9" : "#4A7588", fontSize: 13, marginBottom: 14 },

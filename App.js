@@ -2,8 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Alert, FlatList, Linking, Modal, Pressable, SafeAreaView, StyleSheet, Switch, Text, View } from "react-native";
-import { Platform, Dimensions } from "react-native";
+import { Alert, FlatList, Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Platform, Dimensions, useWindowDimensions } from "react-native";
 import FuelTrackerScreen from "./src/FuelTrackerScreen";
 import PricesScreen from "./src/PricesScreen";
 import MaintenanceScreen from "./src/MaintenanceScreen";
@@ -12,6 +12,7 @@ import LoginScreen from "./src/LoginScreen";
 import { restoreSession, logout as authLogout, softDeleteAccount as authSoftDeleteAccount } from "./src/auth";
 import { t as getT, LANGUAGES } from "./src/i18n";
 import { clearLocalUserData } from "./src/userData";
+import { injectWebStyles } from "./src/webStyles";
 
 const STORAGE_DARK_THEME = "@settings_dark_theme";
 const STORAGE_NOTIFICATIONS = "@settings_notifications";
@@ -28,6 +29,9 @@ function withTimeout(promise, timeoutMs, fallbackValue = null) {
   ]);
 }
 
+// Inject web styles once at module load
+injectWebStyles();
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("prices");
   const [showSplash, setShowSplash] = useState(true);
@@ -39,6 +43,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [accountActionLoading, setAccountActionLoading] = useState(false);
+  const { width: windowWidth } = useWindowDimensions();
+  const isTablet = windowWidth >= 768;
+  const isDesktop = windowWidth >= 1200;
 
   const i = getT(language);
 
@@ -230,9 +237,68 @@ export default function App() {
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.safeBg }]}>
       <StatusBar style={theme.statusBar} />
 
-      <View style={isDarkTheme ? styles.bgBlobTop : styles.bgBlobTopLight} />
-      <View style={isDarkTheme ? styles.bgBlobBottom : styles.bgBlobBottomLight} />
+      {!isDesktop && <View style={isDarkTheme ? styles.bgBlobTop : styles.bgBlobTopLight} />}
+      {!isDesktop && <View style={isDarkTheme ? styles.bgBlobBottom : styles.bgBlobBottomLight} />}
 
+      {/* Desktop: Sidebar layout */}
+      {isDesktop && Platform.OS === "web" ? (
+        <View style={styles.desktopLayout}>
+          {/* Sidebar */}
+          <View style={[styles.sidebar, { backgroundColor: isDarkTheme ? "#0C202D" : "#F0F7FC", borderColor: theme.tabBorder }]}>
+            <View style={[styles.sidebarBrand, { borderColor: theme.tabBorder }]}>
+              <View style={styles.appLogoMark}>
+                <View style={styles.appLogoGlyphWrap}>
+                  <MaterialCommunityIcons name="car" size={16} color="#434B5C" />
+                </View>
+                <View style={styles.appLogoLineStack}>
+                  <View style={[styles.appLogoLine, { width: 12 }]} />
+                  <View style={[styles.appLogoLine, { width: 10 }]} />
+                  <View style={[styles.appLogoLine, { width: 8 }]} />
+                </View>
+              </View>
+              <View style={styles.appBrandTextWrap}>
+                <Text style={[styles.appBrandName, { color: isDarkTheme ? "#D8ECF8" : "#163041" }]}>Araç Defterim</Text>
+                <Text style={[styles.appBrandSub, { color: isDarkTheme ? "#8FB4C8" : "#5C7E92" }]}>Yakıt & Bakım Takibi</Text>
+              </View>
+            </View>
+            {[
+              { key: "prices", icon: "⛽", label: i.tabPrices },
+              { key: "tracker", icon: "📊", label: i.tabFuel },
+              { key: "maintenance", icon: "🔧", label: i.tabMaintenance },
+              { key: "stats", icon: "📈", label: i.tabStats },
+            ].map((tab) => (
+              <Pressable
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
+                style={[
+                  styles.sidebarTab,
+                  activeTab === tab.key && { backgroundColor: theme.tabActiveBg }
+                ]}
+              >
+                <Text style={styles.sidebarTabIcon}>{tab.icon}</Text>
+                <Text style={[styles.sidebarTabLabel, { color: theme.tabLabel }, activeTab === tab.key && { color: theme.tabLabelActive }]}>{tab.label}</Text>
+              </Pressable>
+            ))}
+            <View style={{ flex: 1 }} />
+            <Pressable
+              style={styles.sidebarTab}
+              onPress={() => { setShowSettings(true); setShowLangDropdown(false); }}
+            >
+              <MaterialCommunityIcons name="cog-outline" size={18} color={theme.settingsIconColor} />
+              <Text style={[styles.sidebarTabLabel, { color: theme.tabLabel }]}>{i.settings}</Text>
+            </Pressable>
+          </View>
+
+          {/* Main content */}
+          <ScrollView style={styles.desktopContent} contentContainerStyle={styles.desktopContentInner}>
+            {activeTab === "prices" && <PricesScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} />}
+            {activeTab === "tracker" && <FuelTrackerScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
+            {activeTab === "maintenance" && <MaintenanceScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
+            {activeTab === "stats" && <StatisticsScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} />}
+          </ScrollView>
+        </View>
+      ) : (
+        <>
       <View style={styles.topActionRow}>
         <View
           style={[
@@ -269,45 +335,47 @@ export default function App() {
         </View>
       </View>
 
-      <View style={styles.bottomNavWrap}>
-        <View style={[styles.tabBar, !isDarkTheme && styles.tabBarLight, { backgroundColor: theme.tabBg, borderColor: theme.tabBorder }]}>
+      <View style={[styles.bottomNavWrap, isTablet && styles.bottomNavWrapTablet]}>
+        <View style={[styles.tabBar, !isDarkTheme && styles.tabBarLight, { backgroundColor: theme.tabBg, borderColor: theme.tabBorder }, isTablet && styles.tabBarTablet]}>
           <Pressable
             onPress={() => setActiveTab("prices")}
             style={[styles.tabBtn, activeTab === "prices" && { backgroundColor: theme.tabActiveBg }]}
           >
             <Text style={styles.tabIcon}>⛽</Text>
-            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "prices" && { color: theme.tabLabelActive }]}>{i.tabPrices}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "prices" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabPrices}</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("tracker")}
             style={[styles.tabBtn, activeTab === "tracker" && { backgroundColor: theme.tabActiveBg }]}
           >
             <Text style={styles.tabIcon}>📊</Text>
-            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "tracker" && { color: theme.tabLabelActive }]}>{i.tabFuel}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "tracker" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabFuel}</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("maintenance")}
             style={[styles.tabBtn, activeTab === "maintenance" && { backgroundColor: theme.tabActiveBg }]}
           >
             <Text style={styles.tabIcon}>🔧</Text>
-            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "maintenance" && { color: theme.tabLabelActive }]}>{i.tabMaintenance}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "maintenance" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabMaintenance}</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("stats")}
             style={[styles.tabBtn, activeTab === "stats" && { backgroundColor: theme.tabActiveBg }]}
           >
             <Text style={styles.tabIcon}>📈</Text>
-            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "stats" && { color: theme.tabLabelActive }]}>{i.tabStats}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "stats" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabStats}</Text>
           </Pressable>
         </View>
       </View>
 
-      <View style={styles.content}>
+      <View style={[styles.content, isTablet && styles.contentTablet]}>
         {activeTab === "prices" && <PricesScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} />}
         {activeTab === "tracker" && <FuelTrackerScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
         {activeTab === "maintenance" && <MaintenanceScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
         {activeTab === "stats" && <StatisticsScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} />}
       </View>
+        </>
+      )}
 
       <Modal visible={showSettings} transparent animationType="slide" onRequestClose={() => setShowSettings(false)}>
         <View style={styles.settingsOverlay}>
@@ -555,7 +623,7 @@ const styles = StyleSheet.create({
   tabIcon: { fontSize: 13, lineHeight: 14 },
   tabLabel: { fontWeight: "700", fontSize: 10, maxWidth: "100%" },
 
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 12, width: "100%" },
 
   settingsOverlay: { flex: 1, backgroundColor: "#00000088", justifyContent: "flex-end" },
   settingsModal: {
@@ -661,6 +729,62 @@ const styles = StyleSheet.create({
   },
   deleteAccountBtnText: { color: "#FCA5A5", fontWeight: "800", fontSize: 13 },
   actionBtnDisabled: { opacity: 0.6 },
+
+  // Responsive: Desktop sidebar layout
+  desktopLayout: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  sidebar: {
+    width: 220,
+    borderRightWidth: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
+  sidebarBrand: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingBottom: 16,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+  },
+  sidebarTab: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  sidebarTabIcon: { fontSize: 16 },
+  sidebarTabLabel: { fontSize: 14, fontWeight: "700" },
+  desktopContent: {
+    flex: 1,
+  },
+  desktopContentInner: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
+    flexGrow: 1,
+  },
+
+  // Responsive: Tablet styles
+  bottomNavWrapTablet: {
+    paddingHorizontal: 40,
+  },
+  tabBarTablet: {
+    maxWidth: 500,
+    alignSelf: "center",
+  },
+  tabLabelTablet: { fontSize: 12 },
+  contentTablet: {
+    paddingHorizontal: 32,
+    maxWidth: 1000,
+    alignSelf: "center",
+    width: "100%",
+  },
 });
 
 

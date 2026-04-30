@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FlatList, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { t as getT } from "./i18n";
 
 const STORAGE_SELECTED_CITY = "@fiyatlar_secilen_il";
@@ -312,10 +312,71 @@ const LIGHT = {
   cityItemTextActive: "#0F2C3F",
 };
 
+// Memoized station card for performance
+const StationCard = memo(function StationCard({ item, selectedFuel, isFav, onToggleFav, C, i, numColumns }) {
+  const brandRows = BRAND_DEFS
+    .map((brand) => ({
+      key: brand.key,
+      label: brand.label,
+      value: item.pricesByBrand?.[brand.key]?.[selectedFuel]
+    }))
+    .sort((a, b) => {
+      const aOk = Number.isFinite(a.value) && a.value > 0;
+      const bOk = Number.isFinite(b.value) && b.value > 0;
+      if (aOk && bOk) return a.value - b.value;
+      if (aOk) return -1;
+      if (bOk) return 1;
+      return a.label.localeCompare(b.label, "tr-TR");
+    });
+
+  const bestRow = brandRows.find((row) => Number.isFinite(row.value) && row.value > 0);
+
+  return (
+    <View style={[
+      styles.stationCard,
+      { backgroundColor: C.stationCard, borderColor: C.stationCardBorder },
+      numColumns > 1 && { flex: 1, marginHorizontal: 5 }
+    ]}>
+      <View style={styles.stationHead}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.stationTitle, { color: C.stationTitle }]}>{item.city}</Text>
+          {item.region ? <Text style={[styles.stationMeta, { color: C.stationMeta }]}>{i.regionLabel}: {item.region}</Text> : null}
+        </View>
+        <View style={styles.stationRight}>
+          <Pressable style={[styles.stationStarBtn, { backgroundColor: C.starBtn, borderColor: C.starBtnBorder }]} onPress={() => onToggleFav(item)}>
+            <Text style={styles.stationStarText}>{isFav ? "★" : "☆"}</Text>
+          </Pressable>
+        </View>
+      </View>
+      <View style={styles.priceHeader}>
+        {bestRow ? <Text style={[styles.bestPriceHint, { color: fuelAccent[selectedFuel] }]}>{i.bestPriceLabel || "En uygun"}: {bestRow.label}</Text> : null}
+      </View>
+
+      {brandRows.map((row) => {
+        const available = Number.isFinite(row.value) && row.value > 0;
+        const isBest = bestRow?.key === row.key;
+
+        return (
+          <View key={row.key} style={[styles.brandRow, { borderBottomColor: C.stationCardBorder }]}>
+            <Text style={[styles.brandName, { color: C.stationMeta }]}>{row.label}</Text>
+            <Text style={[styles.brandPrice, { color: isBest ? fuelAccent[selectedFuel] : C.stationTitle }]}>
+              {available ? `${currencyFormatter.format(row.value)} TL` : "-"}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+});
+
 export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
   const C = themeMode === "light" ? LIGHT : DARK;
   const i = getT(lang);
   const fuelLabels = { benzin: i.benzin, motorin: i.motorin, lpg: i.lpg };
+  const { width: windowWidth } = useWindowDimensions();
+
+  // Responsive: determine number of columns
+  const numColumns = windowWidth >= 1200 ? 3 : windowWidth >= 768 ? 2 : 1;
 
   const [selectedFuel, setSelectedFuel] = useState("benzin");
   const [selectedCity, setSelectedCity] = useState(ALL_CITIES_KEY);
@@ -419,7 +480,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
     setTimeout(() => setRefreshing(false), 300);
   };
 
-  const getOrderedCities = (searchTerm) => {
+  const getOrderedCities = useCallback((searchTerm) => {
     const topCities = ["İstanbul", "Ankara", "İzmir"];
     const allCities = availableCities;
     
@@ -431,11 +492,30 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
     const rest = filtered.filter((c) => !topCities.includes(c));
 
     return [ALL_CITIES_KEY, ...first3, ...rest];
-  };
+  }, [availableCities]);
+
+  const handleToggleFavorite = useCallback((item) => toggleStationFavorite(item), [favoriteStations]);
+
+  const renderStationItem = useCallback(({ item }) => (
+    <StationCard
+      item={item}
+      selectedFuel={selectedFuel}
+      isFav={favoriteStations.includes(stationKey(item))}
+      onToggleFav={handleToggleFavorite}
+      C={C}
+      i={i}
+      numColumns={numColumns}
+    />
+  ), [selectedFuel, favoriteStations, C, i, numColumns, handleToggleFavorite]);
+
+  const listKeyExtractor = useCallback((item) => `${item.city}-${item.region || ""}`, []);
+
+  // Force FlatList re-mount when numColumns changes (RN requirement)
+  const flatListKey = `cols-${numColumns}`;
 
   return (
     <View style={styles.container}>
-      <View style={styles.filtersRow}>
+      <View style={[styles.filtersRow, numColumns > 1 && styles.filtersRowWide]}>
         {["benzin", "motorin", "lpg"].map((fuel) => {
           const active = selectedFuel === fuel;
           return (
@@ -454,14 +534,16 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
         })}
       </View>
 
-      <View style={[styles.cityCard, { backgroundColor: C.cityCard, borderColor: C.cityCardBorder }]}>
-        <Text style={[styles.cityLabel, { color: C.cityLabel }]}>{i.citySelection}</Text>
-        <Pressable style={[styles.cityPicker, { backgroundColor: C.cityPicker, borderColor: C.cityPickerBorder }]} onPress={() => setShowCityModal(true)}>
-          <Text style={[styles.cityPickerText, { color: C.cityPickerText }]}>
-            {selectedCity === ALL_CITIES_KEY ? i.allCities : selectedCity}
-          </Text>
-          <Text style={[styles.cityPickerArrow, { color: C.cityPickerArrow }]}>▾</Text>
-        </Pressable>
+      <View style={[styles.cityCard, { backgroundColor: C.cityCard, borderColor: C.cityCardBorder }, numColumns > 1 && styles.cityCardWide]}>
+        <View style={numColumns > 1 ? styles.cityCardInnerRow : undefined}>
+          <Text style={[styles.cityLabel, { color: C.cityLabel }]}>{i.citySelection}</Text>
+          <Pressable style={[styles.cityPicker, { backgroundColor: C.cityPicker, borderColor: C.cityPickerBorder }, numColumns > 1 && styles.cityPickerWide]} onPress={() => setShowCityModal(true)}>
+            <Text style={[styles.cityPickerText, { color: C.cityPickerText }]}>
+              {selectedCity === ALL_CITIES_KEY ? i.allCities : selectedCity}
+            </Text>
+            <Text style={[styles.cityPickerArrow, { color: C.cityPickerArrow }]}>▾</Text>
+          </Pressable>
+        </View>
         {lastUpdatedText ? (
           <Text style={[styles.updatedText, { color: C.cityLabel }]}>{i.updatedAtLabel || "Son güncelleme"}: {lastUpdatedText}</Text>
         ) : null}
@@ -478,69 +560,26 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
         </View>
       ) : (
         <FlatList
+          key={flatListKey}
           data={sortedRecords}
-          keyExtractor={(item) => `${item.city}-${item.region || ""}`}
+          keyExtractor={listKeyExtractor}
+          numColumns={numColumns}
+          columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          initialNumToRender={10}
+          maxToRenderPerBatch={15}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS !== "web"}
+          getItemLayout={undefined}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
-          renderItem={({ item }) => {
-            const isFav = favoriteStations.includes(stationKey(item));
-            const brandRows = BRAND_DEFS
-              .map((brand) => ({
-                key: brand.key,
-                label: brand.label,
-                value: item.pricesByBrand?.[brand.key]?.[selectedFuel]
-              }))
-              .sort((a, b) => {
-                const aOk = Number.isFinite(a.value) && a.value > 0;
-                const bOk = Number.isFinite(b.value) && b.value > 0;
-                if (aOk && bOk) return a.value - b.value;
-                if (aOk) return -1;
-                if (bOk) return 1;
-                return a.label.localeCompare(b.label, "tr-TR");
-              });
-
-            const bestRow = brandRows.find((row) => Number.isFinite(row.value) && row.value > 0);
-
-            return (
-              <View style={[styles.stationCard, { backgroundColor: C.stationCard, borderColor: C.stationCardBorder }]}>
-                <View style={styles.stationHead}>
-                  <View>
-                    <Text style={[styles.stationTitle, { color: C.stationTitle }]}>{item.city}</Text>
-                    {item.region ? <Text style={[styles.stationMeta, { color: C.stationMeta }]}>{i.regionLabel}: {item.region}</Text> : null}
-                  </View>
-                  <View style={styles.stationRight}>
-                    <Pressable style={[styles.stationStarBtn, { backgroundColor: C.starBtn, borderColor: C.starBtnBorder }]} onPress={() => toggleStationFavorite(item)}>
-                      <Text style={styles.stationStarText}>{isFav ? "★" : "☆"}</Text>
-                    </Pressable>
-                  </View>
-                </View>
-                <View style={styles.priceHeader}>
-                  {bestRow ? <Text style={[styles.bestPriceHint, { color: fuelAccent[selectedFuel] }]}>{i.bestPriceLabel || "En uygun"}: {bestRow.label}</Text> : null}
-                </View>
-
-                {brandRows.map((row) => {
-                  const available = Number.isFinite(row.value) && row.value > 0;
-                  const isBest = bestRow?.key === row.key;
-
-                  return (
-                    <View key={row.key} style={[styles.brandRow, { borderBottomColor: C.stationCardBorder }]}>
-                      <Text style={[styles.brandName, { color: C.stationMeta }]}>{row.label}</Text>
-                      <Text style={[styles.brandPrice, { color: isBest ? fuelAccent[selectedFuel] : C.stationTitle }]}>
-                        {available ? `${currencyFormatter.format(row.value)} TL` : "-"}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            );
-          }}
+          renderItem={renderStationItem}
         />
       )}
 
       <Modal visible={showCityModal} transparent animationType="slide" onRequestClose={() => setShowCityModal(false)}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }]}>
+          <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }, numColumns > 1 && styles.modalBoxWide]}>
             <Text style={[styles.modalTitle, { color: C.modalTitle }]}>{i.selectCity}</Text>
             <TextInput
               style={[styles.searchInput, { backgroundColor: C.searchInput, borderColor: C.searchInputBorder, color: C.searchInputText }]}
@@ -552,7 +591,8 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
             <FlatList
               data={getOrderedCities(searchText)}
               keyExtractor={(item) => item}
-              style={{ maxHeight: 350 }}
+              style={{ flex: 1 }}
+              initialNumToRender={20}
               renderItem={({ item }) => {
                 const active = selectedCity === item;
                 return (
@@ -585,7 +625,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 2 },
+  container: { flex: 1, paddingTop: 2, width: "100%" },
   filtersRow: { marginBottom: 12, flexDirection: "row", gap: 8 },
   chip: {
     flex: 1,
@@ -622,9 +662,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
+    overflow: "hidden",
   },
   stationHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  stationRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  stationRight: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 0 },
   stationStarBtn: {
     width: 28,
     height: 28,
@@ -639,7 +680,7 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   badgeText: { fontWeight: "600", fontSize: 11 },
   priceHeader: { marginTop: 12, flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
-  bestPriceHint: { fontSize: 12, fontWeight: "700" },
+  bestPriceHint: { fontSize: 12, fontWeight: "700", flexShrink: 1 },
   brandRow: {
     marginTop: 8,
     flexDirection: "row",
@@ -649,8 +690,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#3A6277"
   },
-  brandName: { fontSize: 14, fontWeight: "600" },
-  brandPrice: { fontSize: 17, fontWeight: "800" },
+  brandName: { fontSize: 14, fontWeight: "600", flex: 1 },
+  brandPrice: { fontSize: 17, fontWeight: "800", flexShrink: 0, textAlign: "right" },
 
   emptyState: {
     marginTop: 14,
@@ -667,6 +708,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 18,
     borderTopWidth: 1,
+    maxHeight: "70%",
   },
   modalTitle: { fontSize: 18, fontWeight: "800", marginBottom: 10 },
   searchInput: {
@@ -693,5 +735,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12
   },
-  closeModalText: { color: "#F2FAFF", fontWeight: "800", fontSize: 14 }
+  closeModalText: { color: "#F2FAFF", fontWeight: "800", fontSize: 14 },
+
+  // Responsive styles
+  filtersRowWide: { maxWidth: 400 },
+  cityCardWide: { maxWidth: 600 },
+  cityCardInnerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  cityPickerWide: { flex: 1 },
+  columnWrapper: { gap: 10 },
+  modalBoxWide: {
+    maxWidth: 500,
+    alignSelf: "center",
+    width: "90%",
+    borderRadius: 24,
+    borderWidth: 1,
+  },
 });
