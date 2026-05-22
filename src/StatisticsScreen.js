@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import { t as getT } from "./i18n";
 import { useResponsiveLayout } from "./responsive";
 
@@ -351,8 +351,10 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
       )}
 
       <Modal visible={showFuelModal} transparent animationType="slide" onRequestClose={() => setShowFuelModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
+        <TouchableWithoutFeedback onPress={() => setShowFuelModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
             <Text style={[styles.modalTitle, { color: C.title }]}>{i.statsSelectFuel}</Text>
             {[
               { key: "benzin", label: fuelLabels.benzin },
@@ -371,13 +373,17 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
             <Pressable style={styles.modalCloseBtn} onPress={() => setShowFuelModal(false)}>
               <Text style={styles.modalCloseText}>{i.close}</Text>
             </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       <Modal visible={showBrandModal} transparent animationType="slide" onRequestClose={() => setShowBrandModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
+        <TouchableWithoutFeedback onPress={() => setShowBrandModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
             <Text style={[styles.modalTitle, { color: C.title }]}>{i.statsSelectBrand}</Text>
             {BRANDS.map((b) => (
               <Pressable
@@ -392,13 +398,17 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
             <Pressable style={styles.modalCloseBtn} onPress={() => setShowBrandModal(false)}>
               <Text style={styles.modalCloseText}>{i.close}</Text>
             </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       <Modal visible={showCityModal} transparent animationType="slide" onRequestClose={() => setShowCityModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
+        <TouchableWithoutFeedback onPress={() => { setShowCityModal(false); setCitySearch(""); }}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
             <Text style={[styles.modalTitle, { color: C.title }]}>{i.statsSelectCity}</Text>
             <TextInput
               style={[styles.searchInput, { backgroundColor: C.chipBg, borderColor: C.chipBorder, color: C.chipText }]}
@@ -422,8 +432,10 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
             <Pressable style={styles.modalCloseBtn} onPress={() => { setShowCityModal(false); setCitySearch(""); }}>
               <Text style={styles.modalCloseText}>{i.close}</Text>
             </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </ScrollView>
   );

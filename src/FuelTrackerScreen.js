@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -683,8 +684,11 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
       {/* ── Modal: Araç Ekle ─────────────────────────────────────── */}
       <Modal visible={showAddVehicle} transparent animationType="slide" onRequestClose={() => setShowAddVehicle(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
+        <TouchableWithoutFeedback onPress={cancelVehicleModal}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
+                <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>{editingVehicleId ? i.editVehicleTitle : i.addVehicleTitle}</Text>
             <TextInput
               style={styles.input}
@@ -732,23 +736,29 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                 </>
               )}
             </View>
+                </View>
+              </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
           </View>
-        </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* ── Modal: Yakıt Girişi ──────────────────────────────────── */}
       <Modal visible={showAddEntry} transparent animationType="slide" onRequestClose={() => setShowAddEntry(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
-          <ScrollView
-            style={styles.modalScroll}
-            contentContainerStyle={styles.modalScrollContent}
-          >
-            <View
-              style={[
-                styles.modalBox,
-                isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile,
-              ]}
-            >
+        <TouchableWithoutFeedback onPress={cancelEdit}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
+                <ScrollView
+                  style={styles.modalScroll}
+                  contentContainerStyle={styles.modalScrollContent}
+                >
+                  <View
+                    style={[
+                      styles.modalBox,
+                      isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile,
+                    ]}
+                  >
               <Text style={styles.modalTitle}>{editingId ? i.editFuelTitle : i.addFuelTitle}</Text>
               {selectedVehicle && (
                 <Text style={styles.modalVehicleLabel}>
@@ -862,9 +872,12 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                   <Text style={styles.modalBtnCancelText}>{i.cancel}</Text>
                 </Pressable>
               </View>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+                  </View>
+                </ScrollView>
+              </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
 

@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Alert, FlatList, Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, FlatList, Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TouchableWithoutFeedback, View } from "react-native";
 import { Platform, Dimensions, useWindowDimensions } from "react-native";
 import FuelTrackerScreen from "./src/FuelTrackerScreen";
 import PricesScreen from "./src/PricesScreen";
@@ -387,8 +387,10 @@ export default function App() {
       )}
 
       <Modal visible={showSettings} transparent animationType="slide" onRequestClose={() => setShowSettings(false)}>
-        <View style={styles.settingsOverlay}>
-          <View style={[styles.settingsModal, { backgroundColor: theme.modalBg, borderColor: theme.tabBorder }]}>
+        <TouchableWithoutFeedback onPress={() => { setShowSettings(false); setShowLangDropdown(false); }}>
+          <View style={styles.settingsOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={[styles.settingsModal, { backgroundColor: theme.modalBg, borderColor: theme.tabBorder }]}>
             <Text style={[styles.settingsTitle, { color: theme.modalText }]}>{i.settings}</Text>
 
             {/* Kullanıcı bilgisi */}
@@ -476,8 +478,10 @@ export default function App() {
             >
               <Text style={styles.closeSettingsText}>{i.close}</Text>
             </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </SafeAreaView>
   );

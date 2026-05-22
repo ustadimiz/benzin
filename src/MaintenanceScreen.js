@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { t as getT } from "./i18n";
@@ -46,6 +47,47 @@ function parseEntryDate(value) {
 
   const fallback = new Date(value);
   return Number.isNaN(fallback.getTime()) ? new Date() : fallback;
+}
+
+function parseUserDateInput(value) {
+  if (!value || typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw) return null;
+
+  const trMatch = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (trMatch) {
+    const day = Number(trMatch[1]);
+    const month = Number(trMatch[2]) - 1;
+    const year = Number(trMatch[3]);
+    const parsed = new Date(year, month, day);
+    if (
+      !Number.isNaN(parsed.getTime()) &&
+      parsed.getDate() === day &&
+      parsed.getMonth() === month &&
+      parsed.getFullYear() === year
+    ) {
+      return parsed;
+    }
+    return null;
+  }
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]) - 1;
+    const day = Number(isoMatch[3]);
+    const parsed = new Date(year, month, day);
+    if (
+      !Number.isNaN(parsed.getTime()) &&
+      parsed.getDate() === day &&
+      parsed.getMonth() === month &&
+      parsed.getFullYear() === year
+    ) {
+      return parsed;
+    }
+  }
+
+  return null;
 }
 
 const emptyEntry = () => ({
@@ -187,16 +229,26 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   };
 
   const deleteEntry = async (id) => {
+    const performDelete = () => {
+      const next = entries.filter((e) => e.id !== id);
+      setEntries(next);
+      persist(next);
+    };
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const confirmed = window.confirm(`${i.deleteTitle}\n\n${i.deleteMsg}`);
+      if (confirmed) {
+        performDelete();
+      }
+      return;
+    }
+
     Alert.alert(i.deleteTitle, i.deleteMsg, [
       { text: i.cancel, style: "cancel" },
       {
         text: i.deleteTitle,
         style: "destructive",
-        onPress: () => {
-          const next = entries.filter((e) => e.id !== id);
-          setEntries(next);
-          persist(next);
-        },
+        onPress: performDelete,
       },
     ]);
   };
@@ -206,28 +258,38 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
     : [];
 
   const deleteVehicle = async () => {
+    const performDeleteVehicle = async () => {
+      try {
+        const updatedVehicles = vehicles.filter((v) => v.id !== selectedVehicle.id);
+        const updatedEntries = entries.filter((e) => e.vehicleId !== selectedVehicle.id);
+        const updatedFuelEntries = fuelData.entries.filter((e) => e.vehicleId !== selectedVehicle.id);
+
+        await Promise.all([
+          saveFuelState(userId, { vehicles: updatedVehicles, entries: updatedFuelEntries }),
+          saveMaintenanceState(userId, { entries: updatedEntries }),
+        ]);
+
+        setFuelData({ vehicles: updatedVehicles, entries: updatedFuelEntries });
+        setEntries(updatedEntries);
+        setVehicles(updatedVehicles);
+        setSelectedVehicle(updatedVehicles.length > 0 ? updatedVehicles[0] : null);
+      } catch (_) {}
+    };
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const confirmed = window.confirm(`${i.deleteVehicleTitle}\n\n${i.deleteVehicleMsg}`);
+      if (confirmed) {
+        await performDeleteVehicle();
+      }
+      return;
+    }
+
     Alert.alert(i.deleteVehicleTitle, i.deleteVehicleMsg, [
       { text: i.cancel, style: "cancel" },
       {
         text: i.deleteVehicleTitle,
         style: "destructive",
-        onPress: async () => {
-          try {
-            const updatedVehicles = vehicles.filter((v) => v.id !== selectedVehicle.id);
-            const updatedEntries = entries.filter((e) => e.vehicleId !== selectedVehicle.id);
-            const updatedFuelEntries = fuelData.entries.filter((e) => e.vehicleId !== selectedVehicle.id);
-
-            await Promise.all([
-              saveFuelState(userId, { vehicles: updatedVehicles, entries: updatedFuelEntries }),
-              saveMaintenanceState(userId, { entries: updatedEntries }),
-            ]);
-
-            setFuelData({ vehicles: updatedVehicles, entries: updatedFuelEntries });
-            setEntries(updatedEntries);
-            setVehicles(updatedVehicles);
-            setSelectedVehicle(updatedVehicles.length > 0 ? updatedVehicles[0] : null);
-          } catch (_) {}
-        },
+        onPress: performDeleteVehicle,
       },
     ]);
   };
@@ -393,21 +455,53 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
 
       {/* ── Modal: Bakım Ekle ─────────────────────────────────── */}
       <Modal visible={showAddEntry} transparent animationType="slide" onRequestClose={() => setShowAddEntry(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
+        <TouchableWithoutFeedback onPress={cancelEntryModal}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
+                <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>{editingId ? i.editMaintTitle : i.addMaintTitle}</Text>
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: layout.compact ? 420 : 500 }}>
               <Text style={styles.inputLabel}>{i.datePlaceholder}</Text>
-              <Pressable
-                style={styles.input}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={[styles.datePickerText, !entryForm.date && styles.datePickerPlaceholder]}>
-                  {entryForm.date || i.datePlaceholder}
-                </Text>
-              </Pressable>
+              {Platform.OS === "web" ? (
+                <input
+                  type="date"
+                  value={(() => {
+                    const d = parseEntryDate(entryForm.date);
+                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                  })()}
+                  onChange={(e) => {
+                    const parsed = parseUserDateInput(e.target.value);
+                    if (parsed) {
+                      setEntryForm((f) => ({ ...f, date: formatDateTR(parsed) }));
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: `1px solid ${isDark ? "#1D445A" : "#C7D9E5"}`,
+                    backgroundColor: isDark ? "#0F2838" : "#FFFFFF",
+                    color: isDark ? "#F0F9FF" : "#163041",
+                    fontSize: "16px",
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI'",
+                    cursor: "pointer",
+                    boxSizing: "border-box",
+                    marginBottom: "12px",
+                  }}
+                />
+              ) : (
+                <Pressable
+                  style={styles.input}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={[styles.datePickerText, !entryForm.date && styles.datePickerPlaceholder]}>
+                    {entryForm.date || i.datePlaceholder}
+                  </Text>
+                </Pressable>
+              )}
 
-              {showDatePicker && (
+              {Platform.OS !== "web" && showDatePicker && (
                 <DateTimePicker
                   value={parseEntryDate(entryForm.date)}
                   mode="date"
@@ -473,14 +567,19 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                 </Pressable>
               </View>
             </ScrollView>
+                </View>
+              </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
           </View>
-        </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* ── Modal: Bakım Türü Seç ─────────────────────────────── */}
       <Modal visible={showMaintenanceModal} transparent animationType="slide" onRequestClose={() => setShowMaintenanceModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalBox, { flexDirection: "column", height: "90%" }]}>
+        <TouchableWithoutFeedback onPress={() => setShowMaintenanceModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={[styles.modalBox, { flexDirection: "column", height: "90%" }]}>
             <Text style={styles.modalTitle}>{i.selectMaintType}</Text>
 
             {/* Manuel Giriş Bölümü */}
@@ -563,8 +662,10 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
             >
               <Text style={styles.modalBtnSaveText}>{i.ok}</Text>
             </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );

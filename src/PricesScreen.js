@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { FlatList, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, TouchableWithoutFeedback, useWindowDimensions, View } from "react-native";
 import { t as getT } from "./i18n";
 import { useResponsiveLayout } from "./responsive";
 
@@ -582,8 +582,10 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
       )}
 
       <Modal visible={showCityModal} transparent animationType="slide" onRequestClose={() => setShowCityModal(false)}>
-        <View style={styles.modalOverlay}>
-            <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }, layout.modalMaxWidth && { maxWidth: layout.modalMaxWidth, width: "94%", alignSelf: "center" }, numColumns > 1 && styles.modalBoxWide]}>
+        <TouchableWithoutFeedback onPress={() => { setShowCityModal(false); setSearchText(""); }}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }, layout.modalMaxWidth && { maxWidth: layout.modalMaxWidth, width: "94%", alignSelf: "center" }, numColumns > 1 && styles.modalBoxWide]}>
               <Text style={[styles.modalTitle, { color: C.modalTitle }]}>{i.selectCity}</Text>
               <TextInput
                 style={[styles.searchInput, { backgroundColor: C.searchInput, borderColor: C.searchInputBorder, color: C.searchInputText }]}
@@ -638,8 +640,10 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
                   <Text style={styles.closeModalText}>{i.close}</Text>
                 </Pressable>
               </View>
-            </View>
-        </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
