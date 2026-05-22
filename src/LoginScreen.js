@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
   // Card
   card: {
     width: "100%",
-    alignSelf: "stretch",
+    alignSelf: "center",
     backgroundColor: PALETTE.card,
     borderRadius: 22,
     borderWidth: 1,
