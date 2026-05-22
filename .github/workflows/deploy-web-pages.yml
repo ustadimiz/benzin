@@ -37,6 +37,7 @@ jobs:
       - name: Prepare static hosting files
         run: |
           REPO_BASE="/${{ github.event.repository.name }}"
+          find dist -type f \( -name '*.js' -o -name '*.html' -o -name '*.css' \) -print0 | xargs -0 sed -i "s|\"/assets/|\"${REPO_BASE}/assets/|g; s|'/assets/|'${REPO_BASE}/assets/|g; s|(/assets/|(${REPO_BASE}/assets/|g; s|=/assets/|=${REPO_BASE}/assets/|g"
           sed -i "s|src=\"/|src=\"${REPO_BASE}/|g; s|href=\"/|href=\"${REPO_BASE}/|g" dist/index.html
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
