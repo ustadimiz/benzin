@@ -214,7 +214,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasScrolledMain, setHasScrolledMain] = useState(false);
-  const tableTouchStartRef = useRef(null);
+  const tableTouchStartRef = useRef({ x: 0, y: 0 });
 
   // Modal görünürlükleri
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -281,19 +281,11 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     if (!isTouchDevice) return false;
     const point = getTouchPoint(event.nativeEvent);
     if (!point) return false;
-
-    // Some touch browsers may skip parent touch-start for child targets.
-    // Initialize safely on first move and let vertical scroll continue.
-    if (!tableTouchStartRef.current) {
-      tableTouchStartRef.current = point;
-      return false;
-    }
-
     const dx = Math.abs(point.x - tableTouchStartRef.current.x);
     const dy = Math.abs(point.y - tableTouchStartRef.current.y);
     if (dx < 8 && dy < 8) return false;
-    // Bias toward vertical to avoid blocking page scroll while finger is on grid.
-    return dx > dy + 4;
+    // Capture only true horizontal intent; vertical drags should keep native page scroll.
+    return dx > dy;
   };
 
   // ── Araç ekle ───────────────────────────────────────────────────
@@ -620,7 +612,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                     data={vehicleEntries}
                     keyExtractor={(item) => item.id}
                     showsVerticalScrollIndicator={false}
-                    scrollEnabled={false}
+                    scrollEnabled
                     contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 110 : 20 }}
                     renderItem={({ item, index }) => {
                       const { unitPrice } = calcStats(item);
