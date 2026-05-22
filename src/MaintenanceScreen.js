@@ -1,5 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -93,6 +93,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [maintenanceTypeOptions, setMaintenanceTypeOptions] = useState([]);
   const [manualMaintenanceInput, setManualMaintenanceInput] = useState("");
+  const tableTouchStartRef = useRef({ x: 0, y: 0 });
 
   const loadData = async () => {
     try {
@@ -241,6 +242,33 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
     setEntryForm((f) => ({ ...f, maintenanceTypes: next }));
   };
 
+  const getTouchPoint = (nativeEvent) => {
+    const touch = nativeEvent?.touches?.[0] || nativeEvent?.changedTouches?.[0];
+    if (!touch) return null;
+    return {
+      x: touch.pageX ?? touch.locationX ?? 0,
+      y: touch.pageY ?? touch.locationY ?? 0,
+    };
+  };
+
+  const handleTableTouchStart = (event) => {
+    if (useFluidColumns) return;
+    const point = getTouchPoint(event.nativeEvent);
+    if (!point) return;
+    tableTouchStartRef.current = point;
+  };
+
+  const shouldCaptureHorizontalMove = (event) => {
+    if (useFluidColumns) return false;
+    const point = getTouchPoint(event.nativeEvent);
+    if (!point) return false;
+    const dx = Math.abs(point.x - tableTouchStartRef.current.x);
+    const dy = Math.abs(point.y - tableTouchStartRef.current.y);
+    if (dx < 8 && dy < 8) return false;
+    // Capture only true horizontal intent; let vertical gestures flow naturally.
+    return dx > dy;
+  };
+
   const styles = createStyles(isDark);
 
   if (isInitialLoading) {
@@ -307,8 +335,9 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                 showsHorizontalScrollIndicator={!useFluidColumns}
                 nestedScrollEnabled
                 directionalLockEnabled
+                onTouchStart={handleTableTouchStart}
                 onStartShouldSetResponderCapture={() => false}
-                onMoveShouldSetResponderCapture={() => !useFluidColumns}
+                onMoveShouldSetResponderCapture={shouldCaptureHorizontalMove}
                 contentContainerStyle={styles.tableScrollContent}
                 style={{ flex: 1 }}
               >
@@ -332,7 +361,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                 <FlatList
                   data={vehicleEntries}
                   keyExtractor={(item) => item.id}
-                  scrollEnabled={useFluidColumns}
+                  scrollEnabled
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ paddingBottom: 20 }}
                   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
