@@ -192,7 +192,11 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     Platform.OS !== "web" ||
     (typeof window !== "undefined" && (
       "ontouchstart" in window ||
-      (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0)
+      (typeof navigator !== "undefined" && (
+        Number(navigator.maxTouchPoints || 0) > 0 ||
+        Number(navigator.msMaxTouchPoints || 0) > 0
+      )) ||
+      (typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches)
     ));
   const { width: windowWidth } = useWindowDimensions();
   const isWide = windowWidth >= 768;
@@ -210,7 +214,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasScrolledMain, setHasScrolledMain] = useState(false);
-  const tableTouchStartRef = useRef({ x: 0, y: 0 });
+  const tableTouchStartRef = useRef(null);
 
   // Modal görünürlükleri
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -277,11 +281,19 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     if (!isTouchDevice) return false;
     const point = getTouchPoint(event.nativeEvent);
     if (!point) return false;
+
+    // Some touch browsers may skip parent touch-start for child targets.
+    // Initialize safely on first move and let vertical scroll continue.
+    if (!tableTouchStartRef.current) {
+      tableTouchStartRef.current = point;
+      return false;
+    }
+
     const dx = Math.abs(point.x - tableTouchStartRef.current.x);
     const dy = Math.abs(point.y - tableTouchStartRef.current.y);
     if (dx < 8 && dy < 8) return false;
-    // Capture only horizontal intent. Vertical drags keep page scroll native.
-    return dx > dy;
+    // Bias toward vertical to avoid blocking page scroll while finger is on grid.
+    return dx > dy + 4;
   };
 
   // ── Araç ekle ───────────────────────────────────────────────────
@@ -577,6 +589,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
               onStartShouldSetResponderCapture={() => false}
               onMoveShouldSetResponderCapture={shouldCaptureHorizontalMove}
               contentContainerStyle={styles.tableScrollContent}
+              style={Platform.OS === "web" && isTouchDevice ? { touchAction: "pan-x pan-y" } : undefined}
             >
               <View style={[styles.tableInner, isWide && styles.tableInnerWide, { minWidth: tableMinWidth }]}>
                 {/* Grid başlığı */}
