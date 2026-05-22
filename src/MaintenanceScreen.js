@@ -1,5 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -91,8 +91,11 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const [entryForm, setEntryForm] = useState(emptyEntry());
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [listScrollEnabled, setListScrollEnabled] = useState(true);
   const [maintenanceTypeOptions, setMaintenanceTypeOptions] = useState([]);
   const [manualMaintenanceInput, setManualMaintenanceInput] = useState("");
+  const tableTouchStartRef = useRef({ x: 0, y: 0 });
+  const tableTouchLockedRef = useRef(false);
 
   const loadData = async () => {
     try {
@@ -241,6 +244,42 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
     setEntryForm((f) => ({ ...f, maintenanceTypes: next }));
   };
 
+  const getTouchPoint = (nativeEvent) => {
+    const touch = nativeEvent?.touches?.[0] || nativeEvent?.changedTouches?.[0];
+    if (!touch) return null;
+    return {
+      x: touch.pageX ?? touch.locationX ?? 0,
+      y: touch.pageY ?? touch.locationY ?? 0,
+    };
+  };
+
+  const handleTableTouchStart = (event) => {
+    if (useFluidColumns) return;
+    const point = getTouchPoint(event.nativeEvent);
+    if (!point) return;
+    tableTouchStartRef.current = point;
+    tableTouchLockedRef.current = false;
+    setListScrollEnabled(true);
+  };
+
+  const handleTableTouchMove = (event) => {
+    if (useFluidColumns || tableTouchLockedRef.current) return;
+    const point = getTouchPoint(event.nativeEvent);
+    if (!point) return;
+    const dx = Math.abs(point.x - tableTouchStartRef.current.x);
+    const dy = Math.abs(point.y - tableTouchStartRef.current.y);
+    if (dx < 7 && dy < 7) return;
+
+    tableTouchLockedRef.current = true;
+    setListScrollEnabled(!(dx > dy));
+  };
+
+  const handleTableTouchEnd = () => {
+    if (useFluidColumns) return;
+    tableTouchLockedRef.current = false;
+    setListScrollEnabled(true);
+  };
+
   const styles = createStyles(isDark);
 
   if (isInitialLoading) {
@@ -305,6 +344,12 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
               <ScrollView
                 horizontal={!useFluidColumns}
                 showsHorizontalScrollIndicator={!useFluidColumns}
+                nestedScrollEnabled
+                directionalLockEnabled
+                onTouchStart={handleTableTouchStart}
+                onTouchMove={handleTableTouchMove}
+                onTouchEnd={handleTableTouchEnd}
+                onTouchCancel={handleTableTouchEnd}
                 contentContainerStyle={styles.tableScrollContent}
                 style={{ flex: 1 }}
               >
@@ -328,6 +373,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                 <FlatList
                   data={vehicleEntries}
                   keyExtractor={(item) => item.id}
+                  scrollEnabled={listScrollEnabled}
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ paddingBottom: 20 }}
                   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
