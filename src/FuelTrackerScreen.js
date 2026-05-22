@@ -434,7 +434,13 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   }
 
   return (
-    <View style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}
+        contentContainerStyle={styles.containerContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
+      >
 
       {/* Araç Seçici */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehicleRow} contentContainerStyle={styles.vehicleRowContent}>
@@ -544,8 +550,8 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                     data={vehicleEntries}
                     keyExtractor={(item) => item.id}
                     showsVerticalScrollIndicator={false}
+                    scrollEnabled={false}
                     contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 110 : 20 }}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
                     renderItem={({ item, index }) => {
                       const { unitPrice } = calcStats(item);
                       const prevEntry = vehicleEntries[index + 1];
@@ -603,6 +609,8 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           </Pressable>
         </>
       )}
+
+      </ScrollView>
 
       {/* ── Modal: Araç Ekle ─────────────────────────────────────── */}
       <Modal visible={showAddVehicle} transparent animationType="slide" onRequestClose={() => setShowAddVehicle(false)}>
@@ -797,6 +805,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
 const createStyles = (isDark) => StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16, paddingVertical: 12 },
+  containerContent: { paddingBottom: 18 },
   containerWide: { maxWidth: 960, alignSelf: "center", width: "100%" },
   containerDesktop: { maxWidth: 1100, paddingHorizontal: 24 },
   headerHintCard: {
