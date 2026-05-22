@@ -9,6 +9,31 @@ export function injectWebStyles() {
 
   const style = document.createElement("style");
   style.textContent = `
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #081B26;
+      overscroll-behavior-y: none;
+      overflow-x: hidden;
+    }
+
+    #root {
+      min-height: 100dvh;
+      background: #081B26;
+    }
+
+    #root > div {
+      min-height: 100dvh;
+      background: transparent;
+    }
+
+    @supports not (height: 100dvh) {
+      #root,
+      #root > div {
+        min-height: 100vh;
+      }
+    }
+
     /* Tap highlight removal */
     * { -webkit-tap-highlight-color: transparent; }
 
