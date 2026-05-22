@@ -63,7 +63,13 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const layout = useResponsiveLayout();
   const i = getT(lang);
   const MAINTENANCE_TYPES = i.maintenanceTypeList;
-  const useFluidColumns = Platform.OS === "web";
+  const isTouchDevice =
+    Platform.OS !== "web" ||
+    (typeof window !== "undefined" && (
+      "ontouchstart" in window ||
+      (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0)
+    ));
+  const useFluidColumns = Platform.OS === "web" && !isTouchDevice;
   const col = useFluidColumns
     ? {
         date: { flex: 1.1, minWidth: 92 },

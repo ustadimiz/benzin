@@ -188,7 +188,12 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const layout = useResponsiveLayout();
   const isDark = themeMode === "dark";
   const fuelLabels = { benzin: i.benzin, motorin: i.motorin, lpg: i.lpg };
-  const isTouchDevice = Platform.OS !== "web";
+  const isTouchDevice =
+    Platform.OS !== "web" ||
+    (typeof window !== "undefined" && (
+      "ontouchstart" in window ||
+      (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0)
+    ));
   const { width: windowWidth } = useWindowDimensions();
   const isWide = windowWidth >= 768;
   const isDesktop = windowWidth >= 1200;
