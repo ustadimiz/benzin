@@ -373,6 +373,10 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    returnKeyType={mode === "login" ? "done" : "next"}
+                    onSubmitEditing={() => {
+                      if (mode === "login") handleSubmit();
+                    }}
                     onFocus={() => setFocusedField("password")}
                     onBlur={() => setFocusedField(null)}
                   />
@@ -407,6 +411,8 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
                       secureTextEntry={!showConfirm}
                       autoCapitalize="none"
                       autoCorrect={false}
+                      returnKeyType="done"
+                      onSubmitEditing={handleSubmit}
                       onFocus={() => setFocusedField("confirm")}
                       onBlur={() => setFocusedField(null)}
                     />
