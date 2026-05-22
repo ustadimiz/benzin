@@ -203,6 +203,9 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const [editingVehicleId, setEditingVehicleId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [hasScrolledMain, setHasScrolledMain] = useState(false);
+  const [isTableInteracting, setIsTableInteracting] = useState(false);
+  const [hasScrolledTableX, setHasScrolledTableX] = useState(false);
 
   // Modal görünürlükleri
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -409,6 +412,8 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     : [];
 
   const crossStats = selectedVehicle ? calcCrossEntryStats(entries, selectedVehicle.id) : null;
+  const showScrollHint = Platform.OS !== "web" && selectedVehicle && !hasScrolledMain;
+  const showHorizontalHint = Platform.OS !== "web" && selectedVehicle && !hasScrolledTableX;
   const totals = vehicleEntries.reduce(
     (acc, e) => {
       const litre = parseNumber(e.litre);
@@ -439,6 +444,14 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
         style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}
         contentContainerStyle={styles.containerContent}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!isTableInteracting}
+        onScroll={(event) => {
+          if (hasScrolledMain) return;
+          if (event.nativeEvent.contentOffset.y > 12) {
+            setHasScrolledMain(true);
+          }
+        }}
+        scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
       >
 
@@ -520,7 +533,30 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           )}
 
           <View style={[styles.tableCard, isDesktop && styles.tableCardDesktop]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContent}>
+            {showHorizontalHint && (
+              <View pointerEvents="none" style={styles.tableScrollHintWrap}>
+                <Text style={styles.tableScrollHintText}>{lang === "tr" ? "Sag kolonlar icin yana kaydir" : "Swipe sideways for right columns"}</Text>
+                <Text style={styles.tableScrollHintArrow}>↔</Text>
+              </View>
+            )}
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              directionalLockEnabled
+              showsHorizontalScrollIndicator
+              onTouchStart={() => setIsTableInteracting(true)}
+              onTouchEnd={() => setIsTableInteracting(false)}
+              onScrollEndDrag={() => setIsTableInteracting(false)}
+              onMomentumScrollEnd={() => setIsTableInteracting(false)}
+              onScroll={(event) => {
+                if (hasScrolledTableX) return;
+                if (event.nativeEvent.contentOffset.x > 8) {
+                  setHasScrolledTableX(true);
+                }
+              }}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.tableScrollContent}
+            >
               <View style={[styles.tableInner, isWide && styles.tableInnerWide, { minWidth: tableMinWidth }]}>
                 {/* Grid başlığı */}
                 <View style={styles.gridHeader}>
@@ -611,6 +647,15 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
       )}
 
       </ScrollView>
+
+      {showScrollHint && (
+        <View pointerEvents="none" style={styles.scrollHintWrap}>
+          <View style={styles.scrollHintCard}>
+            <Text style={styles.scrollHintText}>{lang === "tr" ? "Asagi kaydirarak detaylari gor" : "Scroll down to view details"}</Text>
+            <Text style={styles.scrollHintArrow}>↓</Text>
+          </View>
+        </View>
+      )}
 
       {/* ── Modal: Araç Ekle ─────────────────────────────────────── */}
       <Modal visible={showAddVehicle} transparent animationType="slide" onRequestClose={() => setShowAddVehicle(false)}>
@@ -808,6 +853,35 @@ const createStyles = (isDark) => StyleSheet.create({
   containerContent: { paddingBottom: 18 },
   containerWide: { maxWidth: 960, alignSelf: "center", width: "100%" },
   containerDesktop: { maxWidth: 1100, paddingHorizontal: 24 },
+  scrollHintWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 76,
+    alignItems: "center",
+  },
+  scrollHintCard: {
+    backgroundColor: isDark ? "#163447E8" : "#EAF4FBE8",
+    borderWidth: 1,
+    borderColor: isDark ? "#2B5A72" : "#BDD8E9",
+    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  scrollHintText: {
+    color: isDark ? "#B5D4E5" : "#3F6A82",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  scrollHintArrow: {
+    color: isDark ? "#D6ECF9" : "#2E647F",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 14,
+  },
   headerHintCard: {
     backgroundColor: isDark ? "#0E2736" : "#E8F4FA",
     borderWidth: 1,
@@ -859,6 +933,30 @@ const createStyles = (isDark) => StyleSheet.create({
   },
   tableCardDesktop: { marginBottom: 24 },
   tableScrollContent: { flexGrow: 1 },
+  tableScrollHintWrap: {
+    alignSelf: "center",
+    marginBottom: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: isDark ? "#29556B" : "#C2DCEB",
+    backgroundColor: isDark ? "#123447CC" : "#EAF4FBE6",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  tableScrollHintText: {
+    color: isDark ? "#B7D5E6" : "#3F6A82",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  tableScrollHintArrow: {
+    color: isDark ? "#D5ECF8" : "#2E647F",
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 12,
+  },
   tableInner: { alignSelf: "flex-start" },
   tableInnerWide: { width: "100%" },
   gridHeader: {
