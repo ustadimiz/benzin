@@ -117,7 +117,7 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
             ]}
           />
           <View style={styles.carBody}>
-            <MaterialCommunityIcons name="car" size={42} color={isDark ? "#EAF7FF" : "#253946"} />
+            <MaterialCommunityIcons name="car" size={46} color={isDark ? "#EAF7FF" : "#253946"} />
             <View style={styles.headlightsWrap}>
               <View style={[styles.headlight, isDark ? styles.headlightDark : styles.headlightLight]} />
               <View style={[styles.headlight, isDark ? styles.headlightDark : styles.headlightLight]} />
@@ -203,19 +203,14 @@ const styles = StyleSheet.create({
   carGlowLight: { backgroundColor: "#6FA7C7" },
 
   carBody: {
-    width: 72,
-    height: 52,
+    width: 62,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
   },
   headlightsWrap: {
     position: "absolute",
-    bottom: 4,
+    bottom: 1,
     width: 42,
     flexDirection: "row",
     justifyContent: "space-between",

@@ -201,6 +201,8 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
         onPress={clearFn}
         style={styles.clearBtn}
         hitSlop={8}
+        focusable={false}
+        {...(Platform.OS === "web" ? { tabIndex: -1 } : {})}
         accessibilityRole="button"
         accessibilityLabel={T.clearFieldLabel}
       >
