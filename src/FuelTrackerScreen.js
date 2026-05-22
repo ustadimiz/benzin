@@ -269,6 +269,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   };
 
   const shouldCaptureHorizontalMove = (event) => {
+    if (!isTouchDevice) return false;
     const point = getTouchPoint(event.nativeEvent);
     if (!point) return false;
     const dx = Math.abs(point.x - tableTouchStartRef.current.x);
