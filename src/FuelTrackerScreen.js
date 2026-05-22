@@ -69,6 +69,47 @@ function parseEntryDate(value) {
   return Number.isNaN(fallback.getTime()) ? new Date() : fallback;
 }
 
+function parseUserDateInput(value) {
+  if (!value || typeof value !== "string") return null;
+  const raw = value.trim();
+  if (!raw) return null;
+
+  const trMatch = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (trMatch) {
+    const day = Number(trMatch[1]);
+    const month = Number(trMatch[2]) - 1;
+    const year = Number(trMatch[3]);
+    const parsed = new Date(year, month, day);
+    if (
+      !Number.isNaN(parsed.getTime()) &&
+      parsed.getDate() === day &&
+      parsed.getMonth() === month &&
+      parsed.getFullYear() === year
+    ) {
+      return parsed;
+    }
+    return null;
+  }
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]) - 1;
+    const day = Number(isoMatch[3]);
+    const parsed = new Date(year, month, day);
+    if (
+      !Number.isNaN(parsed.getTime()) &&
+      parsed.getDate() === day &&
+      parsed.getMonth() === month &&
+      parsed.getFullYear() === year
+    ) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
 // ── Boş form şablonu ──────────────────────────────────────────────
 const emptyEntry = () => ({
   id: Date.now().toString(),
@@ -149,6 +190,10 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const { width: windowWidth } = useWindowDimensions();
   const isWide = windowWidth >= 768;
   const isDesktop = windowWidth >= 1200;
+  const wideModalWidth = Math.max(
+    420,
+    Math.min(isDesktop ? 860 : 720, windowWidth - (isDesktop ? 96 : 32))
+  );
 
   const [vehicles, setVehicles] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -165,6 +210,11 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   // Formlar
   const [vehicleForm, setVehicleForm] = useState({ brand: "", model: "", plate: "" });
   const [entryForm, setEntryForm] = useState(emptyEntry());
+
+  const invalidDateText =
+    lang === "tr"
+      ? "Geçerli bir tarih girin. Örnek: 25.03.2026"
+      : "Enter a valid date. Example: 25.03.2026";
 
   const loadData = async () => {
     try {
@@ -242,21 +292,31 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
   // ── Aracı sil ────────────────────────────────────────────────────
   function deleteVehicle(vehicleId) {
+    const performDeleteVehicle = () => {
+      const nextVehicles = vehicles.filter((v) => v.id !== vehicleId);
+      const nextEntries = entries.filter((e) => e.vehicleId !== vehicleId);
+      setVehicles(nextVehicles);
+      setEntries(nextEntries);
+      if (selectedVehicle?.id === vehicleId) {
+        setSelectedVehicle(nextVehicles.length > 0 ? nextVehicles[0] : null);
+      }
+      setEditingVehicleId(null);
+      setShowAddVehicle(false);
+      persist(nextVehicles, nextEntries);
+    };
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const confirmed = window.confirm(`${i.deleteVehicleTitle}\n\n${i.deleteVehicleMsg}`);
+      if (confirmed) {
+        performDeleteVehicle();
+      }
+      return;
+    }
+
     Alert.alert(i.deleteVehicleTitle, i.deleteVehicleMsg, [
       { text: i.cancel, style: "cancel" },
       {
-        text: i.deleteVehicleTitle, style: "destructive", onPress: () => {
-          const nextVehicles = vehicles.filter((v) => v.id !== vehicleId);
-          const nextEntries = entries.filter((e) => e.vehicleId !== vehicleId);
-          setVehicles(nextVehicles);
-          setEntries(nextEntries);
-          if (selectedVehicle?.id === vehicleId) {
-            setSelectedVehicle(nextVehicles.length > 0 ? nextVehicles[0] : null);
-          }
-          setEditingVehicleId(null);
-          setShowAddVehicle(false);
-          persist(nextVehicles, nextEntries);
-        }
+        text: i.deleteVehicleTitle, style: "destructive", onPress: performDeleteVehicle
       }
     ]);
   }
@@ -310,6 +370,10 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     setShowDatePicker(false);
     setEntryForm(emptyEntry());
     setShowAddEntry(false);
+  };
+
+  const openDatePicker = () => {
+    setShowDatePicker(true);
   };
 
   // ── Giriş sil ───────────────────────────────────────────────────
@@ -429,7 +493,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
           <View style={[styles.tableCard, isDesktop && styles.tableCardDesktop]}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContent}>
-              <View style={{ minWidth: tableMinWidth }}>
+              <View style={[styles.tableInner, isWide && styles.tableInnerWide, { minWidth: tableMinWidth }]}>
                 {/* Grid başlığı */}
                 <View style={styles.gridHeader}>
                   <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.date }]}>{i.colDate}</Text>
@@ -440,7 +504,13 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                   <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.unit }]}>{i.colUnit}</Text>
                   <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.tlPerKm }]}>{i.colTlPerKm}</Text>
                   <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.litrePer100 }]}>{i.colLitrePer100km}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.actions }]}></Text>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.gridHeaderCell,
+                      isWide ? { flex: 1, minWidth: columnWidths.actions } : { width: columnWidths.actions },
+                    ]}
+                  ></Text>
                 </View>
 
                 {vehicleEntries.length === 0 ? (
@@ -473,13 +543,73 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                           </Text>
                           <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.tlPerKm }]}>{tlPer1km ? fmt.format(tlPer1km) : "-"}</Text>
                           <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.litrePer100 }]}>{litrePer100km ? fmt.format(litrePer100km) : "-"}</Text>
-                          <View style={[styles.rowActions, { width: columnWidths.actions }]}>
-                            <Pressable style={styles.rowIconBtn} onPress={() => startEdit(item)}>
-                              <Text style={styles.rowEditIcon}>✎</Text>
-                            </Pressable>
-                            <Pressable style={styles.rowIconBtn} onPress={() => deleteEntry(item.id)}>
-                              <Text style={styles.rowDeleteIcon}>✕</Text>
-                            </Pressable>
+                          <View
+                            style={[
+                              styles.rowActions,
+                              isWide ? { flex: 1, minWidth: columnWidths.actions } : { width: columnWidths.actions },
+                            ]}
+                          >
+                            {Platform.OS === "web" ? (
+                              <>
+                                <button
+                                  onClick={() => startEdit(item)}
+                                  style={{
+                                    width: 26,
+                                    height: 26,
+                                    borderRadius: 8,
+                                    backgroundColor: isDark ? "#0B1C28" : "#F5FAFE",
+                                    border: `1px solid ${isDark ? "#21475D" : "#C7D9E5"}`,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: "pointer",
+                                    color: isDark ? "#D8ECF7" : "#1B7FAB",
+                                    fontSize: 12,
+                                    fontWeight: "700",
+                                    padding: 0,
+                                  }}
+                                >
+                                  ✎
+                                </button>
+                                <button
+                                  onClick={() => deleteEntry(item.id)}
+                                  style={{
+                                    width: 26,
+                                    height: 26,
+                                    borderRadius: 8,
+                                    backgroundColor: isDark ? "#0B1C28" : "#F5FAFE",
+                                    border: `1px solid ${isDark ? "#21475D" : "#C7D9E5"}`,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: "pointer",
+                                    color: isDark ? "#F68A8A" : "#E14C4C",
+                                    fontSize: 12,
+                                    fontWeight: "700",
+                                    padding: 0,
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <Pressable 
+                                  style={styles.rowIconBtn} 
+                                  onPress={() => startEdit(item)}
+                                  hitSlop={8}
+                                >
+                                  <Text style={styles.rowEditIcon}>✎</Text>
+                                </Pressable>
+                                <Pressable 
+                                  style={styles.rowIconBtn} 
+                                  onPress={() => deleteEntry(item.id)}
+                                  hitSlop={8}
+                                >
+                                  <Text style={styles.rowDeleteIcon}>✕</Text>
+                                </Pressable>
+                              </>
+                            )}
                           </View>
                         </View>
                       );
@@ -557,8 +687,16 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
       {/* ── Modal: Yakıt Girişi ──────────────────────────────────── */}
       <Modal visible={showAddEntry} transparent animationType="slide" onRequestClose={() => setShowAddEntry(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={styles.modalScrollContent}>
-            <View style={styles.modalBox}>
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalScrollContent}
+          >
+            <View
+              style={[
+                styles.modalBox,
+                isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile,
+              ]}
+            >
               <Text style={styles.modalTitle}>{editingId ? i.editFuelTitle : i.addFuelTitle}</Text>
               {selectedVehicle && (
                 <Text style={styles.modalVehicleLabel}>
@@ -567,16 +705,39 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
               )}
 
               <Text style={styles.inputLabel}>{i.datePlaceholder}</Text>
-              <Pressable
-                style={styles.input}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={[styles.datePickerText, !entryForm.date && styles.datePickerPlaceholder]}>
-                  {entryForm.date || i.datePlaceholder}
-                </Text>
-              </Pressable>
+              {Platform.OS === "web" ? (
+                <input
+                  type="date"
+                  value={(() => {
+                    const d = parseEntryDate(entryForm.date);
+                    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                  })()}
+                  onChange={(e) => {
+                    const parsed = parseUserDateInput(e.target.value);
+                    if (parsed) setEntryForm((f) => ({ ...f, date: formatDateTR(parsed) }));
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: `1px solid ${isDark ? "#1D445A" : "#C7D9E5"}`,
+                    backgroundColor: isDark ? "#0F2838" : "#FFFFFF",
+                    color: isDark ? "#F0F9FF" : "#163041",
+                    fontSize: "16px",
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI'",
+                    cursor: "pointer",
+                    boxSizing: "border-box",
+                  }}
+                />
+              ) : (
+                <Pressable style={styles.input} onPress={openDatePicker}>
+                  <Text style={[styles.datePickerText, !entryForm.date && styles.datePickerPlaceholder]}>
+                    {entryForm.date || i.datePlaceholder}
+                  </Text>
+                </Pressable>
+              )}
 
-              {showDatePicker && (
+              {!Platform.OS === "web" && showDatePicker && (
                 <DateTimePicker
                   value={parseEntryDate(entryForm.date)}
                   mode="date"
@@ -653,6 +814,8 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
+
+
     </View>
   );
 }
@@ -711,21 +874,23 @@ const createStyles = (isDark) => StyleSheet.create({
     marginBottom: 72,
   },
   tableCardDesktop: { marginBottom: 24 },
-  tableScrollContent: { paddingRight: 4 },
+  tableScrollContent: { flexGrow: 1 },
+  tableInner: { alignSelf: "flex-start" },
+  tableInnerWide: { width: "100%" },
   gridHeader: {
     flexDirection: "row", backgroundColor: isDark ? "#133246" : "#EAF3F9", paddingHorizontal: 6,
-    paddingVertical: 9, borderRadius: 10, marginBottom: 6
+    paddingVertical: 9, borderRadius: 10, marginBottom: 6, width: "100%"
   },
   gridHeaderCell: { color: isDark ? "#9BC3D8" : "#4A7588", fontSize: 11, fontWeight: "700", textAlign: "center" },
   gridRow: {
     flexDirection: "row", backgroundColor: isDark ? "#102737" : "#F8FCFF", paddingHorizontal: 6,
     paddingVertical: 10, borderRadius: 10, marginBottom: 6,
-    borderWidth: 1, borderColor: isDark ? "#1E4359" : "#E0EAEF", alignItems: "center"
+    borderWidth: 1, borderColor: isDark ? "#1E4359" : "#E0EAEF", alignItems: "center", width: "100%"
   },
   gridRowAlt: { backgroundColor: isDark ? "#0E2230" : "#F0F6FA", borderColor: isDark ? "#1A3A4D" : "#D9E7F0" },
   gridCell: { color: isDark ? "#D4E8F4" : "#163041", fontSize: 11, textAlign: "center" },
   gridCellLeft: { textAlign: "left" },
-  rowActions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 4 },
+  rowActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 6, paddingRight: 2 },
   rowIconBtn: {
     width: 26,
     height: 26,
@@ -757,12 +922,14 @@ const createStyles = (isDark) => StyleSheet.create({
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end", alignItems: "center" },
-  modalScrollContent: { justifyContent: "flex-end", flexGrow: 1, width: "100%", maxWidth: 500 },
+  modalScroll: { width: "100%" },
+  modalScrollContent: { justifyContent: "flex-end", flexGrow: 1, width: "100%", alignItems: "center" },
   modalBox: {
     backgroundColor: isDark ? "#0F2838" : "#F8FCFF", borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 22, borderTopWidth: 1, borderColor: isDark ? "#1D445A" : "#C7D9E5",
-    width: "100%", maxWidth: 500, alignSelf: "center"
+    width: "100%", alignSelf: "center"
   },
+  modalBoxMobile: { width: "100%" },
   modalTitle: { color: isDark ? "#F0F9FF" : "#12384D", fontSize: 20, fontWeight: "800", marginBottom: 6 },
   modalVehicleLabel: { color: isDark ? "#96C2D9" : "#4A7588", fontSize: 13, marginBottom: 14 },
   inputLabel: { color: isDark ? "#9DBED2" : "#5A7588", fontSize: 12, fontWeight: "700", marginBottom: 6, marginTop: 4 },
@@ -796,4 +963,5 @@ const createStyles = (isDark) => StyleSheet.create({
     alignItems: "center",
   },
   modalBtnSaveText: { color: "#F1FAFF", fontWeight: "800", fontSize: 14 },
+
 });
