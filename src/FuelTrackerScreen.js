@@ -205,7 +205,6 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasScrolledMain, setHasScrolledMain] = useState(false);
   const [isTableInteracting, setIsTableInteracting] = useState(false);
-  const [hasScrolledTableX, setHasScrolledTableX] = useState(false);
 
   // Modal görünürlükleri
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -413,7 +412,6 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
   const crossStats = selectedVehicle ? calcCrossEntryStats(entries, selectedVehicle.id) : null;
   const showScrollHint = Platform.OS !== "web" && selectedVehicle && !hasScrolledMain;
-  const showHorizontalHint = Platform.OS !== "web" && selectedVehicle && !hasScrolledTableX;
   const totals = vehicleEntries.reduce(
     (acc, e) => {
       const litre = parseNumber(e.litre);
@@ -533,28 +531,14 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           )}
 
           <View style={[styles.tableCard, isDesktop && styles.tableCardDesktop]}>
-            {showHorizontalHint && (
-              <View pointerEvents="none" style={styles.tableScrollHintWrap}>
-                <Text style={styles.tableScrollHintText}>{lang === "tr" ? "Sag kolonlar icin yana kaydir" : "Swipe sideways for right columns"}</Text>
-                <Text style={styles.tableScrollHintArrow}>↔</Text>
-              </View>
-            )}
             <ScrollView
               horizontal
               nestedScrollEnabled
               directionalLockEnabled
               showsHorizontalScrollIndicator
-              onTouchStart={() => setIsTableInteracting(true)}
-              onTouchEnd={() => setIsTableInteracting(false)}
+              onScrollBeginDrag={() => setIsTableInteracting(true)}
               onScrollEndDrag={() => setIsTableInteracting(false)}
               onMomentumScrollEnd={() => setIsTableInteracting(false)}
-              onScroll={(event) => {
-                if (hasScrolledTableX) return;
-                if (event.nativeEvent.contentOffset.x > 8) {
-                  setHasScrolledTableX(true);
-                }
-              }}
-              scrollEventThrottle={16}
               contentContainerStyle={styles.tableScrollContent}
             >
               <View style={[styles.tableInner, isWide && styles.tableInnerWide, { minWidth: tableMinWidth }]}>
@@ -933,30 +917,6 @@ const createStyles = (isDark) => StyleSheet.create({
   },
   tableCardDesktop: { marginBottom: 24 },
   tableScrollContent: { flexGrow: 1 },
-  tableScrollHintWrap: {
-    alignSelf: "center",
-    marginBottom: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: isDark ? "#29556B" : "#C2DCEB",
-    backgroundColor: isDark ? "#123447CC" : "#EAF4FBE6",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  tableScrollHintText: {
-    color: isDark ? "#B7D5E6" : "#3F6A82",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  tableScrollHintArrow: {
-    color: isDark ? "#D5ECF8" : "#2E647F",
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 12,
-  },
   tableInner: { alignSelf: "flex-start" },
   tableInnerWide: { width: "100%" },
   gridHeader: {
