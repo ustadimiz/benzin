@@ -1,5 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -205,6 +205,8 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasScrolledMain, setHasScrolledMain] = useState(false);
   const [isTableInteracting, setIsTableInteracting] = useState(false);
+  const tableTouchStartRef = useRef({ x: 0, y: 0 });
+  const tableTouchLockedRef = useRef(false);
 
   // Modal görünürlükleri
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -252,6 +254,41 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
       await saveFuelState(userId, { vehicles: nextVehicles, entries: nextEntries });
     } catch (_) {}
   }
+
+  const getTouchPoint = (nativeEvent) => {
+    const touch = nativeEvent?.touches?.[0] || nativeEvent?.changedTouches?.[0];
+    if (!touch) return null;
+    const x = touch.pageX ?? touch.locationX ?? 0;
+    const y = touch.pageY ?? touch.locationY ?? 0;
+    return { x, y };
+  };
+
+  const handleTableTouchStart = (event) => {
+    const point = getTouchPoint(event.nativeEvent);
+    if (!point) return;
+    tableTouchStartRef.current = point;
+    tableTouchLockedRef.current = false;
+    setIsTableInteracting(false);
+  };
+
+  const handleTableTouchMove = (event) => {
+    if (tableTouchLockedRef.current) return;
+    const point = getTouchPoint(event.nativeEvent);
+    if (!point) return;
+    const dx = Math.abs(point.x - tableTouchStartRef.current.x);
+    const dy = Math.abs(point.y - tableTouchStartRef.current.y);
+    if (dx < 7 && dy < 7) return;
+
+    tableTouchLockedRef.current = true;
+    // Horizontal gesture: allow grid scroll, pause parent vertical scroll.
+    // Vertical gesture: keep parent vertical scroll enabled.
+    setIsTableInteracting(dx > dy);
+  };
+
+  const handleTableTouchEnd = () => {
+    tableTouchLockedRef.current = false;
+    setIsTableInteracting(false);
+  };
 
   // ── Araç ekle ───────────────────────────────────────────────────
   function submitVehicle() {
@@ -536,9 +573,12 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
               nestedScrollEnabled
               directionalLockEnabled
               showsHorizontalScrollIndicator
-              onScrollBeginDrag={() => setIsTableInteracting(true)}
-              onScrollEndDrag={() => setIsTableInteracting(false)}
-              onMomentumScrollEnd={() => setIsTableInteracting(false)}
+              onTouchStart={handleTableTouchStart}
+              onTouchMove={handleTableTouchMove}
+              onTouchEnd={handleTableTouchEnd}
+              onTouchCancel={handleTableTouchEnd}
+              onScrollEndDrag={handleTableTouchEnd}
+              onMomentumScrollEnd={handleTableTouchEnd}
               contentContainerStyle={styles.tableScrollContent}
             >
               <View style={[styles.tableInner, isWide && styles.tableInnerWide, { minWidth: tableMinWidth }]}>
