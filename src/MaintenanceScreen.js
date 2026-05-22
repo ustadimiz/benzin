@@ -18,7 +18,6 @@ import { loadFuelState, loadMaintenanceState, saveFuelState, saveMaintenanceStat
 import { useResponsiveLayout } from "./responsive";
 import DrivingLogoLoader from "./DrivingLogoLoader";
 import PullToRefreshScrollView from "./components/PullToRefreshScrollView";
-import PullToRefreshFlatList from "./components/PullToRefreshFlatList";
 
 const columnWidths = {
   date: 92,
@@ -280,134 +279,117 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
 
   return (
     <View style={[styles.container, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}>
-      {/* Araç Seçici */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.vehicleRow}
-        contentContainerStyle={styles.vehicleRowContent}
+      <PullToRefreshScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        onRefresh={onRefresh}
+        refreshTintColor="#D3ECFB"
+        indicatorColor="#D3ECFB"
+        indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
+        indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
+        indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
+        showsVerticalScrollIndicator={false}
       >
-        {vehicles.map((v) => (
-          <Pressable
-            key={v.id}
-            onPress={() => setSelectedVehicle(v)}
-            style={[styles.vehicleChip,selectedVehicle?.id === v.id && styles.vehicleChipActive]}
-          >
-            <Text style={styles.vehicleChipIcon}>🚗</Text>
-            <Text style={[styles.vehicleChipText, selectedVehicle?.id === v.id && styles.vehicleChipTextActive]}>
-              {v.brand} {v.model}
-            </Text>
-            {v.plate ? <Text style={styles.vehiclePlate}>{v.plate}</Text> : null}
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      {!selectedVehicle ? (
-        <PullToRefreshScrollView
-          style={styles.emptyRefreshWrap}
-          contentContainerStyle={styles.emptyRefreshContent}
-          onRefresh={onRefresh}
-          refreshTintColor="#D3ECFB"
-          indicatorColor="#D3ECFB"
-          indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
-          indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
-          indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
+        {/* Araç Seçici */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.vehicleRow}
+          contentContainerStyle={styles.vehicleRowContent}
         >
+          {vehicles.map((v) => (
+            <Pressable
+              key={v.id}
+              onPress={() => setSelectedVehicle(v)}
+              style={[styles.vehicleChip,selectedVehicle?.id === v.id && styles.vehicleChipActive]}
+            >
+              <Text style={styles.vehicleChipIcon}>🚗</Text>
+              <Text style={[styles.vehicleChipText, selectedVehicle?.id === v.id && styles.vehicleChipTextActive]}>
+                {v.brand} {v.model}
+              </Text>
+              {v.plate ? <Text style={styles.vehiclePlate}>{v.plate}</Text> : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {!selectedVehicle ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateIcon}>🔧</Text>
             <Text style={styles.emptyStateText}>{i.noVehicle}</Text>
             <Text style={styles.emptyStateSub}>{i.noMaintVehicleSub}</Text>
           </View>
-        </PullToRefreshScrollView>
-      ) : (
-        <>
-          {vehicleEntries.length === 0 ? (
-            <PullToRefreshScrollView
-              style={styles.emptyRefreshWrap}
-              contentContainerStyle={styles.emptyRefreshContent}
-              onRefresh={onRefresh}
-              refreshTintColor="#D3ECFB"
-              indicatorColor="#D3ECFB"
-              indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
-              indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
-              indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
-            >
+        ) : (
+          <>
+            {vehicleEntries.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyStateText}>{i.noMaintEntry}</Text>
               </View>
-            </PullToRefreshScrollView>
-          ) : (
-            <View style={styles.tableCard}>
-              <ScrollView
-                horizontal={!useFluidColumns}
-                showsHorizontalScrollIndicator={!useFluidColumns}
-                nestedScrollEnabled
-                directionalLockEnabled
-                onTouchStart={handleTableTouchStart}
-                onStartShouldSetResponderCapture={() => false}
-                onMoveShouldSetResponderCapture={shouldCaptureHorizontalMove}
-                contentContainerStyle={styles.tableScrollContent}
-                style={{ flex: 1 }}
-              >
-                <View
-                  style={[
-                    styles.tableInner,
-                    useFluidColumns && styles.tableInnerWide,
-                    { minWidth: useFluidColumns ? 0 : tableMinWidth },
-                  ]}
+            ) : (
+              <View style={styles.tableCard}>
+                <ScrollView
+                  horizontal={!useFluidColumns}
+                  showsHorizontalScrollIndicator={!useFluidColumns}
+                  nestedScrollEnabled
+                  directionalLockEnabled
+                  onTouchStart={handleTableTouchStart}
+                  onStartShouldSetResponderCapture={() => false}
+                  onMoveShouldSetResponderCapture={shouldCaptureHorizontalMove}
+                  contentContainerStyle={styles.tableScrollContent}
+                  style={{ flex: 1 }}
                 >
-                {/* Bakım Listesi Header - Sticky */}
-                <View style={styles.gridHeader}>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.date]}>{i.colDate}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.km]}>{i.colKm}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.types]}>{i.colMaintTypes}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.cost, { textAlign: "center" }]}>{i.colCost}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.actions, { textAlign: "center" }]}></Text>
-                </View>
-
-                {/* Tablo Verileri */}
-                <PullToRefreshFlatList
-                  data={vehicleEntries}
-                  keyExtractor={(item) => item.id}
-                  scrollEnabled
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ paddingBottom: 20 }}
-                  onRefresh={onRefresh}
-                  refreshTintColor="#D3ECFB"
-                  indicatorColor="#D3ECFB"
-                  indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
-                  indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
-                  indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
-                  renderItem={({ item, index }) => (
-                    <View style={[styles.gridRow, index % 2 === 1 && styles.gridRowAlt]}>
-                  <Text numberOfLines={1} style={[styles.gridCell, col.date]}>{item.date}</Text>
-                  <Text numberOfLines={1} style={[styles.gridCell, col.km]}>{item.km}</Text>
-                  <Text numberOfLines={1} style={[styles.gridCell, col.types, { fontSize: 11 }]}>
-                    {item.maintenanceTypes.join(", ")}
-                  </Text>
-                  <Text numberOfLines={1} style={[styles.gridCell, col.cost]}>{item.cost} ₺</Text>
-                  <View style={[styles.rowActions, col.actions]}>
-                    <Pressable style={styles.rowIconBtn} onPress={() => startEdit(item)}>
-                      <Text style={styles.rowEditIcon}>✎</Text>
-                    </Pressable>
-                    <Pressable style={styles.rowIconBtn} onPress={() => deleteEntry(item.id)}>
-                      <Text style={styles.rowDeleteIcon}>✕</Text>
-                    </Pressable>
+                  <View
+                    style={[
+                      styles.tableInner,
+                      useFluidColumns && styles.tableInnerWide,
+                      { minWidth: useFluidColumns ? 0 : tableMinWidth },
+                    ]}
+                  >
+                  {/* Bakım Listesi Header - Sticky */}
+                  <View style={styles.gridHeader}>
+                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.date]}>{i.colDate}</Text>
+                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.km]}>{i.colKm}</Text>
+                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.types]}>{i.colMaintTypes}</Text>
+                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.cost, { textAlign: "center" }]}>{i.colCost}</Text>
+                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.actions, { textAlign: "center" }]}></Text>
                   </View>
-                    </View>
-                  )}
-                />
-              </View>
-            </ScrollView>
-            </View>
-          )}
 
-          {/* FAB */}
-          <Pressable onPress={() => setShowAddEntry(true)} style={styles.fab}>
-            <Text style={styles.fabText}>{i.addMaintEntry}</Text>
-          </Pressable>
-        </>
-      )}
+                  {/* Tablo Verileri */}
+                  <FlatList
+                    data={vehicleEntries}
+                    keyExtractor={(item) => item.id}
+                    scrollEnabled
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                    renderItem={({ item, index }) => (
+                      <View style={[styles.gridRow, index % 2 === 1 && styles.gridRowAlt]}>
+                    <Text numberOfLines={1} style={[styles.gridCell, col.date]}>{item.date}</Text>
+                    <Text numberOfLines={1} style={[styles.gridCell, col.km]}>{item.km}</Text>
+                    <Text numberOfLines={1} style={[styles.gridCell, col.types, { fontSize: 11 }]}>
+                      {item.maintenanceTypes.join(", ")}
+                    </Text>
+                    <Text numberOfLines={1} style={[styles.gridCell, col.cost]}>{item.cost} ₺</Text>
+                    <View style={[styles.rowActions, col.actions]}>
+                      <Pressable style={styles.rowIconBtn} onPress={() => startEdit(item)}>
+                        <Text style={styles.rowEditIcon}>✎</Text>
+                      </Pressable>
+                      <Pressable style={styles.rowIconBtn} onPress={() => deleteEntry(item.id)}>
+                        <Text style={styles.rowDeleteIcon}>✕</Text>
+                      </Pressable>
+                    </View>
+                      </View>
+                    )}
+                  />
+                </View>
+              </ScrollView>
+              </View>
+            )}
+
+            {/* FAB */}
+            <Pressable onPress={() => setShowAddEntry(true)} style={styles.fab}>
+              <Text style={styles.fabText}>{i.addMaintEntry}</Text>
+            </Pressable>
+          </>
+        )}
+      </PullToRefreshScrollView>
 
       {/* ── Modal: Bakım Ekle ─────────────────────────────────── */}
       <Modal visible={showAddEntry} transparent animationType="slide" onRequestClose={() => setShowAddEntry(false)}>

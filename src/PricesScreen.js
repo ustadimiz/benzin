@@ -1,10 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Modal, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { FlatList, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { t as getT } from "./i18n";
 import previewPricesData from "../allprices-preview.json";
 import { useResponsiveLayout } from "./responsive";
-import PullToRefreshFlatList from "./components/PullToRefreshFlatList";
 
 const STORAGE_SELECTED_CITY = "@fiyatlar_secilen_il";
 const STORAGE_FAVORITE_STATIONS = "@fiyatlar_favori_istasyonlar";
@@ -387,6 +386,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
   const [showCityModal, setShowCityModal] = useState(false);
   const [favoriteStations, setFavoriteStations] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [allCityRecords, setAllCityRecords] = useState([]);
   const [lastUpdatedText, setLastUpdatedText] = useState("");
@@ -487,7 +487,9 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
   };
 
   const onRefresh = async () => {
+    setRefreshing(true);
     await fetchLivePrices();
+    setTimeout(() => setRefreshing(false), 300);
   };
 
   const getOrderedCities = useCallback((searchTerm) => {
@@ -571,7 +573,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
           <Text style={[styles.emptyStateSub, { color: C.emptySub }]}>{i.noDataSub}</Text>
         </View>
       ) : (
-        <PullToRefreshFlatList
+        <FlatList
           key={flatListKey}
           data={sortedRecords}
           keyExtractor={listKeyExtractor}
@@ -579,15 +581,12 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
           columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          onRefresh={onRefresh}
-          indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
-          indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
-          indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
           initialNumToRender={10}
           maxToRenderPerBatch={15}
           windowSize={5}
           removeClippedSubviews={Platform.OS !== "web"}
           getItemLayout={undefined}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
           renderItem={renderStationItem}
         />
       )}
