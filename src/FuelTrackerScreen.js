@@ -378,14 +378,22 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
   // ── Giriş sil ───────────────────────────────────────────────────
   function deleteEntry(id) {
+    const performDelete = () => {
+      const next = entries.filter((e) => e.id !== id);
+      setEntries(next);
+      persist(vehicles, next);
+    };
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const confirmed = window.confirm(`${i.deleteTitle}\n\n${i.deleteMsg}`);
+      if (confirmed) performDelete();
+      return;
+    }
+
     Alert.alert(i.deleteTitle, i.deleteMsg, [
       { text: i.cancel, style: "cancel" },
       {
-        text: i.deleteTitle, style: "destructive", onPress: () => {
-          const next = entries.filter((e) => e.id !== id);
-          setEntries(next);
-          persist(vehicles, next);
-        }
+        text: i.deleteTitle, style: "destructive", onPress: performDelete
       }
     ]);
   }
@@ -522,7 +530,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                     data={vehicleEntries}
                     keyExtractor={(item) => item.id}
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 20 }}
+                    contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 110 : 20 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
                     renderItem={({ item, index }) => {
                       const { unitPrice } = calcStats(item);
@@ -549,67 +557,20 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                               isWide ? { flex: 1, minWidth: columnWidths.actions } : { width: columnWidths.actions },
                             ]}
                           >
-                            {Platform.OS === "web" ? (
-                              <>
-                                <button
-                                  onClick={() => startEdit(item)}
-                                  style={{
-                                    width: 26,
-                                    height: 26,
-                                    borderRadius: 8,
-                                    backgroundColor: isDark ? "#0B1C28" : "#F5FAFE",
-                                    border: `1px solid ${isDark ? "#21475D" : "#C7D9E5"}`,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    cursor: "pointer",
-                                    color: isDark ? "#D8ECF7" : "#1B7FAB",
-                                    fontSize: 12,
-                                    fontWeight: "700",
-                                    padding: 0,
-                                  }}
-                                >
-                                  ✎
-                                </button>
-                                <button
-                                  onClick={() => deleteEntry(item.id)}
-                                  style={{
-                                    width: 26,
-                                    height: 26,
-                                    borderRadius: 8,
-                                    backgroundColor: isDark ? "#0B1C28" : "#F5FAFE",
-                                    border: `1px solid ${isDark ? "#21475D" : "#C7D9E5"}`,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    cursor: "pointer",
-                                    color: isDark ? "#F68A8A" : "#E14C4C",
-                                    fontSize: 12,
-                                    fontWeight: "700",
-                                    padding: 0,
-                                  }}
-                                >
-                                  ✕
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <Pressable 
-                                  style={styles.rowIconBtn} 
-                                  onPress={() => startEdit(item)}
-                                  hitSlop={8}
-                                >
-                                  <Text style={styles.rowEditIcon}>✎</Text>
-                                </Pressable>
-                                <Pressable 
-                                  style={styles.rowIconBtn} 
-                                  onPress={() => deleteEntry(item.id)}
-                                  hitSlop={8}
-                                >
-                                  <Text style={styles.rowDeleteIcon}>✕</Text>
-                                </Pressable>
-                              </>
-                            )}
+                            <Pressable
+                              style={styles.rowIconBtn}
+                              onPress={() => startEdit(item)}
+                              hitSlop={8}
+                            >
+                              <Text style={styles.rowEditIcon}>✎</Text>
+                            </Pressable>
+                            <Pressable
+                              style={styles.rowIconBtn}
+                              onPress={() => deleteEntry(item.id)}
+                              hitSlop={8}
+                            >
+                              <Text style={styles.rowDeleteIcon}>✕</Text>
+                            </Pressable>
                           </View>
                         </View>
                       );
@@ -623,7 +584,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           <Pressable onPress={() => {
             setShowDatePicker(false);
             setShowAddEntry(true);
-          }} style={styles.fab}>
+          }} style={Platform.OS === "web" ? styles.fabWeb : styles.fab}>
             <Text style={styles.fabText}>{i.addFuelEntry}</Text>
           </Pressable>
         </>
@@ -890,7 +851,15 @@ const createStyles = (isDark) => StyleSheet.create({
   gridRowAlt: { backgroundColor: isDark ? "#0E2230" : "#F0F6FA", borderColor: isDark ? "#1A3A4D" : "#D9E7F0" },
   gridCell: { color: isDark ? "#D4E8F4" : "#163041", fontSize: 11, textAlign: "center" },
   gridCellLeft: { textAlign: "left" },
-  rowActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 6, paddingRight: 2 },
+  rowActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 6,
+    paddingRight: 2,
+    position: "relative",
+    zIndex: 2,
+  },
   rowIconBtn: {
     width: 26,
     height: 26,
@@ -911,6 +880,16 @@ const createStyles = (isDark) => StyleSheet.create({
     position: "absolute", bottom: 6, right: 0, left: 0,
     backgroundColor: "#1B7FAB", borderRadius: 14, paddingVertical: 13,
     alignItems: "center"
+  },
+  fabWeb: {
+    position: "relative",
+    width: "100%",
+    backgroundColor: "#1B7FAB",
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 6,
   },
   fabText: { color: "#F2FAFF", fontWeight: "800", fontSize: 15 },
 
