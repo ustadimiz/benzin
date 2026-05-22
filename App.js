@@ -88,6 +88,15 @@ export default function App() {
       };
 
   useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const bg = theme.safeBg;
+    document.documentElement.style.backgroundColor = bg;
+    document.body.style.backgroundColor = bg;
+    const root = document.getElementById("root");
+    if (root) root.style.backgroundColor = bg;
+  }, [theme.safeBg]);
+
+  useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 1500);
     return () => clearTimeout(timer);
   }, []);
@@ -230,7 +239,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginScreen onAuthSuccess={setUser} lang={language} />;
+    return <LoginScreen onAuthSuccess={setUser} lang={language} themeMode={isDarkTheme ? "dark" : "light"} />;
   }
 
   return (

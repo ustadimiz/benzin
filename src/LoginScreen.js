@@ -16,7 +16,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { login, register } from "./auth";
 import { useResponsiveLayout } from "./responsive";
 
-const PALETTE = {
+const DARK_PALETTE = {
   bg: "#081B26",
   card: "#0C202D",
   border: "#1A3E53",
@@ -32,10 +32,33 @@ const PALETTE = {
   error: "#F87171",
   tabInactiveBg: "#0D2230",
   tabInactiveText: "#5A8BA3",
+  footerText: "#4E7A92",
 };
 
-export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
+const LIGHT_PALETTE = {
+  bg: "#EAF3F9",
+  card: "#FFFFFF",
+  border: "#C4D9E7",
+  inputBg: "#EAF3FB",
+  inputBorder: "#BBCFDC",
+  inputFocus: "#1B7FAB",
+  textPrimary: "#12384D",
+  textSecondary: "#5A8298",
+  textMuted: "#7A9EB5",
+  accent: "#1B7FAB",
+  accentDark: "#135D80",
+  success: "#16A34A",
+  error: "#DC2626",
+  tabInactiveBg: "#F0F7FC",
+  tabInactiveText: "#5F8FA8",
+  footerText: "#5A8298",
+};
+
+export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "dark" }) {
   const layout = useResponsiveLayout();
+  const isLight = themeMode === "light";
+  const palette = isLight ? LIGHT_PALETTE : DARK_PALETTE;
+  const styles = createStyles(palette, isLight);
   const [mode, setMode] = useState("login"); // "login" | "register"
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -184,18 +207,20 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
         <MaterialCommunityIcons
           name="close-circle"
           size={18}
-          color={focusedField === field ? PALETTE.accent : PALETTE.textMuted}
+          color={focusedField === field ? palette.accent : palette.textMuted}
         />
       </Pressable>
     );
   }
 
+  const safeStyle = [styles.safe, Platform.OS === "web" && styles.safeWeb];
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={safeStyle}>
       {/* Decorative blobs */}
-      <View style={styles.blobTopRight} pointerEvents="none" />
-      <View style={styles.blobBottomLeft} pointerEvents="none" />
-      <View style={styles.blobMidAccent} pointerEvents="none" />
+      {!isLight && <View style={styles.blobTopRight} pointerEvents="none" />}
+      {!isLight && <View style={styles.blobBottomLeft} pointerEvents="none" />}
+      {!isLight && <View style={styles.blobMidAccent} pointerEvents="none" />}
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -257,13 +282,13 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                     <MaterialCommunityIcons
                       name="account-outline"
                       size={18}
-                      color={focusedField === "displayName" ? PALETTE.accent : PALETTE.textMuted}
+                      color={focusedField === "displayName" ? palette.accent : palette.textMuted}
                       style={styles.inputIcon}
                     />
                     <TextInput
                       style={[styles.inputText, webInputStyle]}
                       placeholder={T.placeholderDisplayName}
-                      placeholderTextColor={PALETTE.textMuted}
+                      placeholderTextColor={palette.textMuted}
                       value={displayName}
                       onChangeText={setDisplayName}
                       autoCapitalize="words"
@@ -283,13 +308,13 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                     <MaterialCommunityIcons
                       name="email-outline"
                       size={18}
-                      color={focusedField === "email" ? PALETTE.accent : PALETTE.textMuted}
+                      color={focusedField === "email" ? palette.accent : palette.textMuted}
                       style={styles.inputIcon}
                     />
                     <TextInput
                       style={[styles.inputText, webInputStyle]}
                       placeholder={T.placeholderEmail}
-                      placeholderTextColor={PALETTE.textMuted}
+                      placeholderTextColor={palette.textMuted}
                       value={email}
                       onChangeText={(t) => setEmail(t.trim().toLowerCase())}
                       autoCapitalize="none"
@@ -310,13 +335,13 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                   <MaterialCommunityIcons
                     name="at"
                     size={18}
-                    color={focusedField === "username" ? PALETTE.accent : PALETTE.textMuted}
+                    color={focusedField === "username" ? palette.accent : palette.textMuted}
                     style={styles.inputIcon}
                   />
                   <TextInput
                     style={[styles.inputText, webInputStyle]}
                     placeholder={mode === "login" ? T.placeholderLoginIdentifier : T.placeholderUsername}
-                    placeholderTextColor={PALETTE.textMuted}
+                    placeholderTextColor={palette.textMuted}
                     value={username}
                     onChangeText={(t) => setUsername(t.toLowerCase().replace(/\s/g, ""))}
                     autoCapitalize="none"
@@ -336,13 +361,13 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                   <MaterialCommunityIcons
                     name="lock-outline"
                     size={18}
-                    color={focusedField === "password" ? PALETTE.accent : PALETTE.textMuted}
+                    color={focusedField === "password" ? palette.accent : palette.textMuted}
                     style={styles.inputIcon}
                   />
                   <TextInput
                     style={[styles.inputText, webInputStyle, styles.flex]}
                     placeholder={T.placeholderPassword}
-                    placeholderTextColor={PALETTE.textMuted}
+                    placeholderTextColor={palette.textMuted}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
@@ -356,7 +381,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                     <MaterialCommunityIcons
                       name={showPassword ? "eye-off-outline" : "eye-outline"}
                       size={18}
-                      color={PALETTE.textMuted}
+                      color={palette.textMuted}
                     />
                   </Pressable>
                 </View>
@@ -370,13 +395,13 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                     <MaterialCommunityIcons
                       name="lock-check-outline"
                       size={18}
-                      color={focusedField === "confirm" ? PALETTE.accent : PALETTE.textMuted}
+                      color={focusedField === "confirm" ? palette.accent : palette.textMuted}
                       style={styles.inputIcon}
                     />
                     <TextInput
                       style={[styles.inputText, webInputStyle, styles.flex]}
                       placeholder={T.placeholderConfirmPassword}
-                      placeholderTextColor={PALETTE.textMuted}
+                      placeholderTextColor={palette.textMuted}
                       value={confirmPassword}
                       onChangeText={setConfirmPassword}
                       secureTextEntry={!showConfirm}
@@ -390,7 +415,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                       <MaterialCommunityIcons
                         name={showConfirm ? "eye-off-outline" : "eye-outline"}
                         size={18}
-                        color={PALETTE.textMuted}
+                        color={palette.textMuted}
                       />
                     </Pressable>
                   </View>
@@ -400,7 +425,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
               {/* Error */}
               {!!error && (
                 <View style={styles.errorWrap}>
-                  <MaterialCommunityIcons name="alert-circle-outline" size={15} color={PALETTE.error} />
+                  <MaterialCommunityIcons name="alert-circle-outline" size={15} color={palette.error} />
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
               )}
@@ -583,24 +608,28 @@ const EN = {
 };
 
 // ── Styles ───────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PALETTE.bg },
+const createStyles = (palette, isLight) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: palette.bg },
+  safeWeb: {
+    minHeight: "100vh",
+    width: "100%",
+  },
   flex: { flex: 1 },
 
   blobTopRight: {
     position: "absolute", top: -100, right: -80,
     width: 240, height: 240, borderRadius: 999,
-    backgroundColor: "#0EA5E91A",
+    backgroundColor: isLight ? "#1B7FAB1A" : "#0EA5E91A",
   },
   blobBottomLeft: {
     position: "absolute", bottom: -100, left: -100,
     width: 260, height: 260, borderRadius: 999,
-    backgroundColor: "#22C55E12",
+    backgroundColor: isLight ? "#22C55E0E" : "#22C55E12",
   },
   blobMidAccent: {
     position: "absolute", top: "38%", left: -60,
     width: 160, height: 160, borderRadius: 999,
-    backgroundColor: "#0EA5E908",
+    backgroundColor: isLight ? "#1B7FAB0C" : "#0EA5E908",
   },
 
   scroll: {
@@ -625,31 +654,31 @@ const styles = StyleSheet.create({
   logoGlyphWrap: { width: 40, height: 32, alignItems: "center", justifyContent: "center" },
   logoLineStack: { alignItems: "center", gap: 3 },
   logoLine: { height: 3, borderRadius: 2, backgroundColor: "#4B5365" },
-  appName: { color: PALETTE.textPrimary, fontSize: 26, fontWeight: "800", letterSpacing: 0.3, textAlign: "center" },
+  appName: { color: palette.textPrimary, fontSize: 26, fontWeight: "800", letterSpacing: 0.3, textAlign: "center" },
   appNameCompact: { fontSize: 23 },
-  appSub: { color: PALETTE.textSecondary, fontSize: 13, fontWeight: "600", marginTop: 4, textAlign: "center" },
+  appSub: { color: palette.textSecondary, fontSize: 13, fontWeight: "600", marginTop: 4, textAlign: "center" },
   appSubCompact: { fontSize: 12 },
 
   // Card
   card: {
     width: "100%",
     alignSelf: "center",
-    backgroundColor: PALETTE.card,
+    backgroundColor: palette.card,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: PALETTE.border,
+    borderColor: palette.border,
     overflow: "hidden",
 
-    shadowColor: "#000", shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3, shadowRadius: 20, elevation: 10,
+    shadowColor: isLight ? "#8CB8CF" : "#000", shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: isLight ? 0.14 : 0.3, shadowRadius: isLight ? 14 : 20, elevation: isLight ? 4 : 10,
   },
 
   // Tab row
   tabRow: {
     flexDirection: "row",
-    backgroundColor: PALETTE.inputBg,
+    backgroundColor: palette.inputBg,
     borderBottomWidth: 1,
-    borderBottomColor: PALETTE.border,
+    borderBottomColor: palette.border,
   },
   tab: {
     flex: 1,
@@ -658,17 +687,17 @@ const styles = StyleSheet.create({
   },
   tabCompact: { paddingVertical: 12 },
   tabActive: {
-    backgroundColor: PALETTE.card,
+    backgroundColor: palette.card,
     borderBottomWidth: 2,
-    borderBottomColor: PALETTE.accent,
+    borderBottomColor: palette.accent,
   },
   tabText: {
     fontSize: 14,
     fontWeight: "600",
-    color: PALETTE.tabInactiveText,
+    color: palette.tabInactiveText,
   },
   tabTextActive: {
-    color: PALETTE.accent,
+    color: palette.accent,
     fontWeight: "800",
   },
 
@@ -676,7 +705,7 @@ const styles = StyleSheet.create({
   formBody: { padding: 20, gap: 4 },
   fieldWrap: { marginBottom: 14 },
   label: {
-    color: PALETTE.textSecondary,
+    color: palette.textSecondary,
     fontSize: 12,
     fontWeight: "700",
     marginBottom: 6,
@@ -686,16 +715,16 @@ const styles = StyleSheet.create({
   input: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: PALETTE.inputBg,
+    backgroundColor: palette.inputBg,
     borderWidth: 1,
-    borderColor: PALETTE.inputBorder,
+    borderColor: palette.inputBorder,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 50,
   },
   inputFocused: {
-    borderColor: PALETTE.inputFocus,
-    shadowColor: PALETTE.inputFocus,
+    borderColor: palette.inputFocus,
+    shadowColor: palette.inputFocus,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -704,7 +733,7 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 10 },
   inputText: {
     flex: 1,
-    color: PALETTE.textPrimary,
+    color: palette.textPrimary,
     fontSize: 15,
     fontWeight: "500",
   },
@@ -734,23 +763,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 6,
   },
-  errorText: { color: PALETTE.error, fontSize: 13, fontWeight: "600", flex: 1 },
+  errorText: { color: palette.error, fontSize: 13, fontWeight: "600", flex: 1 },
 
   // Submit button
   submitBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: PALETTE.accent,
+    backgroundColor: palette.accent,
     borderRadius: 13,
     height: 52,
     marginTop: 4,
 
-    shadowColor: PALETTE.accent, shadowOffset: { width: 0, height: 4 },
+    shadowColor: palette.accent, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 10, elevation: 6,
   },
   submitBtnCompact: { height: 48 },
-  submitBtnPressed: { backgroundColor: PALETTE.accentDark, transform: [{ scale: 0.98 }] },
+  submitBtnPressed: { backgroundColor: palette.accentDark, transform: [{ scale: 0.98 }] },
   submitBtnDisabled: { opacity: 0.7 },
   submitBtnText: { color: "#fff", fontSize: 16, fontWeight: "800", letterSpacing: 0.3 },
 
@@ -759,7 +788,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   forgotLink: {
-    color: "#86C7E9",
+    color: palette.accent,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -774,12 +803,12 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   switchWrapCompact: { rowGap: 4 },
-  switchText: { color: PALETTE.textSecondary, fontSize: 13 },
-  switchLink: { color: PALETTE.accent, fontSize: 13, fontWeight: "700" },
+  switchText: { color: palette.textSecondary, fontSize: 13 },
+  switchLink: { color: palette.accent, fontSize: 13, fontWeight: "700" },
 
   // Footer
   footer: {
-    color: PALETTE.textMuted,
+    color: palette.footerText,
     fontSize: 11,
     fontWeight: "500",
     marginTop: 28,

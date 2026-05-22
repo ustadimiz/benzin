@@ -495,9 +495,10 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
   const getOrderedCities = useCallback((searchTerm) => {
     const topCities = ["İstanbul", "Ankara", "İzmir"];
     const allCities = availableCities;
-    
+
+    const normalizedSearch = normalizeForMatch(searchTerm);
     const filtered = allCities.filter((city) =>
-      searchTerm === "" || city.toLowerCase().startsWith(searchTerm.toLowerCase())
+      normalizedSearch === "" || normalizeForMatch(city).includes(normalizedSearch)
     );
 
     const first3 = topCities.filter((c) => filtered.includes(c));
