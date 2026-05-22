@@ -149,9 +149,9 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
   return (
     <SafeAreaView style={styles.safe}>
       {/* Decorative blobs */}
-      <View style={styles.blobTopRight} />
-      <View style={styles.blobBottomLeft} />
-      <View style={styles.blobMidAccent} />
+      <View style={styles.blobTopRight} pointerEvents="none" />
+      <View style={styles.blobBottomLeft} pointerEvents="none" />
+      <View style={styles.blobMidAccent} pointerEvents="none" />
 
       <KeyboardAvoidingView
         style={styles.flex}

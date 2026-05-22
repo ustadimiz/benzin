@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { t as getT } from "./i18n";
+import previewHistoryData from "../allprices-preview.json";
 
 const HISTORY_FEED_URL = "https://raw.githubusercontent.com/ustadimiz/fuel-data/refs/heads/main/allprices.json";
 const FUEL_ACCENT = { benzin: "#F59E0B", motorin: "#0EA5E9", lpg: "#22C55E" };
@@ -131,6 +132,18 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
 
   const load = async () => {
     try {
+      if (Platform.OS === "web" && Array.isArray(previewHistoryData)) {
+        const parsed = parseHistory(previewHistoryData);
+        setSnapshots(parsed);
+
+        if (!selectedCity && parsed.length > 0) {
+          const latest = parsed[parsed.length - 1];
+          const city = latest.provinces?.[0]?.provinceName || "";
+          setSelectedCity(city);
+        }
+        return;
+      }
+
       const res = await fetch(HISTORY_FEED_URL);
       if (!res.ok) {
         setSnapshots([]);

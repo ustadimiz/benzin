@@ -6,6 +6,7 @@
 		"orientation": "portrait",
 		"web": {
 			"favicon": "./assets/favicon.png",
+			"publicPath": "/benzin/",
 			"buildDir": ".web"
 		},
 		"userInterfaceStyle": "light",
