@@ -26,6 +26,7 @@ const columnWidths = {
   cost: 76,
   actions: 70,
 };
+const tableMinWidth = Object.values(columnWidths).reduce((sum, n) => sum + n, 0);
 
 function formatDateTR(date) {
   return date.toLocaleDateString("tr-TR");
@@ -62,6 +63,22 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const layout = useResponsiveLayout();
   const i = getT(lang);
   const MAINTENANCE_TYPES = i.maintenanceTypeList;
+  const useFluidColumns = Platform.OS === "web";
+  const col = useFluidColumns
+    ? {
+        date: { flex: 1.1, minWidth: 92 },
+        km: { flex: 1.0, minWidth: 82 },
+        types: { flex: 2.2, minWidth: 150 },
+        cost: { flex: 1.0, minWidth: 90 },
+        actions: { width: 78 },
+      }
+    : {
+        date: { width: columnWidths.date },
+        km: { width: columnWidths.km },
+        types: { width: columnWidths.types },
+        cost: { width: columnWidths.cost },
+        actions: { width: columnWidths.actions },
+      };
 
   const [vehicles, setVehicles] = useState([]);
   const [fuelData, setFuelData] = useState({ vehicles: [], entries: [] });
@@ -285,15 +302,26 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
             </ScrollView>
           ) : (
             <View style={styles.tableCard}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContent} style={{ flex: 1 }}>
-                <View style={{ minWidth: columnWidths.date + columnWidths.km + columnWidths.types + columnWidths.cost + columnWidths.actions }}>
+              <ScrollView
+                horizontal={!useFluidColumns}
+                showsHorizontalScrollIndicator={!useFluidColumns}
+                contentContainerStyle={styles.tableScrollContent}
+                style={{ flex: 1 }}
+              >
+                <View
+                  style={[
+                    styles.tableInner,
+                    useFluidColumns && styles.tableInnerWide,
+                    { minWidth: useFluidColumns ? 0 : tableMinWidth },
+                  ]}
+                >
                 {/* Bakım Listesi Header - Sticky */}
                 <View style={styles.gridHeader}>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.date }]}>{i.colDate}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.km }]}>{i.colKm}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.types }]}>{i.colMaintTypes}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.cost }, { textAlign: "center" }]}>{i.colCost}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.actions }, { textAlign: "center" }]}></Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.date]}>{i.colDate}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.km]}>{i.colKm}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.types]}>{i.colMaintTypes}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.cost, { textAlign: "center" }]}>{i.colCost}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.actions, { textAlign: "center" }]}></Text>
                 </View>
 
                 {/* Tablo Verileri */}
@@ -305,13 +333,13 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                   refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
                   renderItem={({ item, index }) => (
                     <View style={[styles.gridRow, index % 2 === 1 && styles.gridRowAlt]}>
-                  <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.date }]}>{item.date}</Text>
-                  <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.km }]}>{item.km}</Text>
-                  <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.types, fontSize: 11 }]}>
+                  <Text numberOfLines={1} style={[styles.gridCell, col.date]}>{item.date}</Text>
+                  <Text numberOfLines={1} style={[styles.gridCell, col.km]}>{item.km}</Text>
+                  <Text numberOfLines={1} style={[styles.gridCell, col.types, { fontSize: 11 }]}>
                     {item.maintenanceTypes.join(", ")}
                   </Text>
-                  <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.cost }]}>{item.cost} ₺</Text>
-                  <View style={[styles.rowActions, { width: columnWidths.actions }]}>
+                  <Text numberOfLines={1} style={[styles.gridCell, col.cost]}>{item.cost} ₺</Text>
+                  <View style={[styles.rowActions, col.actions]}>
                     <Pressable style={styles.rowIconBtn} onPress={() => startEdit(item)}>
                       <Text style={styles.rowEditIcon}>✎</Text>
                     </Pressable>
@@ -541,7 +569,9 @@ const createStyles = (isDark) => StyleSheet.create({
     marginBottom: 72,
     flex: 1,
   },
-  tableScrollContent: { paddingRight: 4 },
+  tableScrollContent: { paddingRight: 4, flexGrow: 1 },
+  tableInner: { alignSelf: "flex-start" },
+  tableInnerWide: { width: "100%", alignSelf: "stretch" },
 
   gridHeader: {
     flexDirection: "row",
@@ -550,6 +580,7 @@ const createStyles = (isDark) => StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 10,
     marginBottom: 6,
+    width: "100%",
   },
   gridHeaderCell: { color: isDark ? "#9BC3D8" : "#4A7588", fontSize: 11, fontWeight: "700", textAlign: "center" },
   gridRow: {
@@ -560,13 +591,14 @@ const createStyles = (isDark) => StyleSheet.create({
     marginBottom: 6,
     borderRadius: 10,
     alignItems: "center",
+    width: "100%",
   },
   gridRowAlt: {
     backgroundColor: isDark ? "#0A1B26" : "#F0F6FA",
   },
   gridCell: { color: isDark ? "#D3ECFB" : "#163041", fontSize: 12, fontWeight: "500", textAlign: "center" },
 
-  rowActions: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 4 },
+  rowActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 6, paddingRight: 2 },
   rowIconBtn: {
     width: 26,
     height: 26,
