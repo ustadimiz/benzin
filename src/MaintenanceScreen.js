@@ -307,6 +307,8 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                 showsHorizontalScrollIndicator={!useFluidColumns}
                 nestedScrollEnabled
                 directionalLockEnabled
+                onStartShouldSetResponderCapture={() => false}
+                onMoveShouldSetResponderCapture={() => !useFluidColumns}
                 contentContainerStyle={styles.tableScrollContent}
                 style={{ flex: 1 }}
               >
