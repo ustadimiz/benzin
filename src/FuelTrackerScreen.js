@@ -188,6 +188,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const layout = useResponsiveLayout();
   const isDark = themeMode === "dark";
   const fuelLabels = { benzin: i.benzin, motorin: i.motorin, lpg: i.lpg };
+  const isTouchDevice = Platform.OS !== "web";
   const { width: windowWidth } = useWindowDimensions();
   const isWide = windowWidth >= 768;
   const isDesktop = windowWidth >= 1200;
@@ -477,9 +478,12 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     <View style={{ flex: 1 }}>
       <ScrollView
         style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}
-        contentContainerStyle={styles.containerContent}
+        contentContainerStyle={[styles.containerContent, { flexGrow: 1 }]}
         showsVerticalScrollIndicator={false}
         scrollEnabled={!isTableInteracting}
+        overScrollMode="always"
+        alwaysBounceVertical
+        bounces
         onScroll={(event) => {
           if (hasScrolledMain) return;
           if (event.nativeEvent.contentOffset.y > 12) {
@@ -487,7 +491,11 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           }
         }}
         scrollEventThrottle={16}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
+        refreshControl={
+          isTouchDevice
+            ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />
+            : undefined
+        }
       >
 
       {/* Araç Seçici */}
