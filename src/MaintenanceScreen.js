@@ -17,6 +17,7 @@ import {
 import { t as getT } from "./i18n";
 import { loadFuelState, loadMaintenanceState, saveFuelState, saveMaintenanceState, loadMaintenanceTypes } from "./userData";
 import { useResponsiveLayout } from "./responsive";
+import DrivingLogoLoader from "./DrivingLogoLoader";
 
 const columnWidths = {
   date: 92,
@@ -72,30 +73,36 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [entryForm, setEntryForm] = useState(emptyEntry());
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [maintenanceTypeOptions, setMaintenanceTypeOptions] = useState([]);
   const [manualMaintenanceInput, setManualMaintenanceInput] = useState("");
 
   const loadData = async () => {
-    const [fuelResult, maintenanceResult] = await Promise.allSettled([
-      loadFuelState(userId),
-      loadMaintenanceState(userId),
-    ]);
+    try {
+      const [fuelResult, maintenanceResult] = await Promise.allSettled([
+        loadFuelState(userId),
+        loadMaintenanceState(userId),
+      ]);
 
-    if (fuelResult.status === "fulfilled") {
-      const nextFuelData = fuelResult.value || { vehicles: [], entries: [] };
-      const nextVehicles = nextFuelData.vehicles || [];
-      setFuelData(nextFuelData);
-      setVehicles(nextVehicles);
-      setSelectedVehicle((current) => nextVehicles.find((vehicle) => vehicle.id === current?.id) || nextVehicles[0] || null);
+      if (fuelResult.status === "fulfilled") {
+        const nextFuelData = fuelResult.value || { vehicles: [], entries: [] };
+        const nextVehicles = nextFuelData.vehicles || [];
+        setFuelData(nextFuelData);
+        setVehicles(nextVehicles);
+        setSelectedVehicle((current) => nextVehicles.find((vehicle) => vehicle.id === current?.id) || nextVehicles[0] || null);
+      }
+
+      if (maintenanceResult.status === "fulfilled") {
+        const nextMaintenanceData = maintenanceResult.value || { entries: [] };
+        setEntries(nextMaintenanceData.entries || []);
+      }
+
+      const dbTypes = await loadMaintenanceTypes();
+      setMaintenanceTypeOptions(dbTypes);
+    } catch (_) {
+    } finally {
+      setIsInitialLoading(false);
     }
-
-    if (maintenanceResult.status === "fulfilled") {
-      const nextMaintenanceData = maintenanceResult.value || { entries: [] };
-      setEntries(nextMaintenanceData.entries || []);
-    }
-
-    const dbTypes = await loadMaintenanceTypes();
-    setMaintenanceTypeOptions(dbTypes);
   };
 
   useEffect(() => {
@@ -218,6 +225,15 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   };
 
   const styles = createStyles(isDark);
+
+  if (isInitialLoading) {
+    return (
+      <DrivingLogoLoader
+        themeMode={themeMode}
+        message={lang === "tr" ? "Bakım verileri yükleniyor..." : "Maintenance data is loading..."}
+      />
+    );
+  }
 
   return (
     <View style={[styles.container, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}>

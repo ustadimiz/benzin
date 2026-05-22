@@ -18,6 +18,7 @@ import {
 import { t as getT } from "./i18n";
 import { loadFuelState, saveFuelState } from "./userData";
 import { useResponsiveLayout } from "./responsive";
+import DrivingLogoLoader from "./DrivingLogoLoader";
 
 const fuelAccent = { benzin: "#F59E0B", motorin: "#0EA5E9", lpg: "#22C55E" };
 const fmt = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -201,6 +202,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const [editingId, setEditingId] = useState(null);
   const [editingVehicleId, setEditingVehicleId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Modal görünürlükleri
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -225,7 +227,10 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
       setVehicles(nextVehicles);
       setEntries(nextEntries);
       setSelectedVehicle((current) => nextVehicles.find((vehicle) => vehicle.id === current?.id) || nextVehicles[0] || null);
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      setIsInitialLoading(false);
+    }
   };
 
   // ── Storage yükle ───────────────────────────────────────────────
@@ -418,6 +423,15 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
   // ── Render ──────────────────────────────────────────────────────
   const styles = createStyles(isDark);
+
+  if (isInitialLoading) {
+    return (
+      <DrivingLogoLoader
+        themeMode={themeMode}
+        message={lang === "tr" ? "Yakıt verileri yükleniyor..." : "Fuel data is loading..."}
+      />
+    );
+  }
 
   return (
     <View style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}>
