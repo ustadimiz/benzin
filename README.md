@@ -1,6 +1,6 @@
 # Benzin
 
-Expo ile gelistirilmis, Turkiye akaryakit fiyatlarini (Benzin, Motorin, LPG) ornek JSON veri ile listeleyen basit mobil uygulama.
+Expo ile gelistirilmis, Turkiye akaryakit fiyatlarini (Benzin, Motorin, LPG) listeleyen basit mobil uygulama.
 
 ## Kurulum
 
@@ -14,10 +14,8 @@ npm run start
 ## Proje Notlari
 
 - Uygulama girisi: App.js
-- Veri kaynagi: data/fuelPrices.sample.json
+- Veri kaynagi: uzak API ve kullaniciya ait kayitlar
 - Logo varligi: assets/logo.svg
-
-Uygulama su anda sabit ornek JSON verisi ile calisir.
 
 ## Supabase Kimlik Dogrulama Kurulumu
 

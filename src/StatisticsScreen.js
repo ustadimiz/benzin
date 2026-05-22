@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { t as getT } from "./i18n";
-import previewHistoryData from "../allprices-preview.json";
 import { useResponsiveLayout } from "./responsive";
 
 const HISTORY_FEED_URL = "https://raw.githubusercontent.com/ustadimiz/fuel-data/refs/heads/main/allprices.json";
@@ -134,18 +133,6 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
 
   const load = async () => {
     try {
-      if (Platform.OS === "web" && Array.isArray(previewHistoryData)) {
-        const parsed = parseHistory(previewHistoryData);
-        setSnapshots(parsed);
-
-        if (!selectedCity && parsed.length > 0) {
-          const latest = parsed[parsed.length - 1];
-          const city = latest.provinces?.[0]?.provinceName || "";
-          setSelectedCity(city);
-        }
-        return;
-      }
-
       const res = await fetch(HISTORY_FEED_URL);
       if (!res.ok) {
         setSnapshots([]);
@@ -195,9 +182,9 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
   }, [snapshots, selectedCity, selectedBrand, selectedFuel]);
 
   const filteredCities = useMemo(() => {
-    const q = citySearch.trim().toLocaleLowerCase("tr-TR");
+    const q = normalize(citySearch);
     if (!q) return cities;
-    return cities.filter((c) => c.toLocaleLowerCase("tr-TR").includes(q));
+    return cities.filter((c) => normalize(c).includes(q));
   }, [cities, citySearch]);
 
   const stats = useMemo(() => {

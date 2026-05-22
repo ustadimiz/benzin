@@ -375,7 +375,7 @@ export function getEmptyMaintenanceState() {
 }
 
 export async function loadMaintenanceTypes() {
-  if (!canUseCloudSync("dummy")) {
+  if (!canUseCloudSync("system")) {
     return [];
   }
 

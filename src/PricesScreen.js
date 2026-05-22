@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { t as getT } from "./i18n";
-import previewPricesData from "../allprices-preview.json";
 import { useResponsiveLayout } from "./responsive";
 
 const STORAGE_SELECTED_CITY = "@fiyatlar_secilen_il";
@@ -398,15 +397,6 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
 
   const fetchLivePrices = async () => {
     try {
-      if (Platform.OS === "web" && Array.isArray(previewPricesData)) {
-        const mapped = mapFeedRecords(previewPricesData);
-        if (mapped.length > 0) {
-          setAllCityRecords(mapped);
-          setLastUpdatedText(normalizeText(previewPricesData?.[0]?.generatedAt?.formatted));
-          return true;
-        }
-      }
-
       const response = await fetch(PRICES_FEED_URL);
       if (!response.ok) return false;
 
