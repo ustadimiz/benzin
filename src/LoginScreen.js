@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -70,8 +70,17 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focusedField, setFocusedField] = useState(null);
+  const usernameInputRef = useRef(null);
 
   const T = lang === "tr" ? TR : EN;
+
+  useEffect(() => {
+    if (mode !== "login") return;
+    const timer = setTimeout(() => {
+      usernameInputRef.current?.focus?.();
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [mode]);
 
   function resetForm() {
     setDisplayName("");
@@ -341,6 +350,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
                     style={styles.inputIcon}
                   />
                   <TextInput
+                    ref={usernameInputRef}
                     style={[styles.inputText, webInputStyle]}
                     placeholder={mode === "login" ? T.placeholderLoginIdentifier : T.placeholderUsername}
                     placeholderTextColor={palette.textMuted}
@@ -349,6 +359,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
                     autoCapitalize="none"
                     autoCorrect={false}
                     keyboardType="default"
+                    autoFocus={mode === "login"}
                     onFocus={() => setFocusedField("username")}
                     onBlur={() => setFocusedField(null)}
                   />
