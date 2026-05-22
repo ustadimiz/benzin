@@ -46,6 +46,10 @@ export default function App() {
   const { width: windowWidth } = useWindowDimensions();
   const isTablet = windowWidth >= 768;
   const isDesktop = windowWidth >= 1200;
+  const wideModalWidth = Math.max(
+    420,
+    Math.min(isDesktop ? 860 : 720, windowWidth - (isDesktop ? 96 : 32))
+  );
 
   const i = getT(language);
 
@@ -390,7 +394,7 @@ export default function App() {
         <TouchableWithoutFeedback onPress={() => { setShowSettings(false); setShowLangDropdown(false); }}>
           <View style={styles.settingsOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.settingsModal, { backgroundColor: theme.modalBg, borderColor: theme.tabBorder }]}>
+              <View style={[styles.settingsModal, isTablet ? { width: wideModalWidth, borderRadius: 24 } : styles.settingsModalMobile, { backgroundColor: theme.modalBg, borderColor: theme.tabBorder }]}>
             <Text style={[styles.settingsTitle, { color: theme.modalText }]}>{i.settings}</Text>
 
             {/* Kullanıcı bilgisi */}
@@ -641,13 +645,15 @@ const styles = StyleSheet.create({
 
   content: { flex: 1, paddingHorizontal: 16, paddingTop: 12, width: "100%", maxWidth: 1240, alignSelf: "center" },
 
-  settingsOverlay: { flex: 1, backgroundColor: "#00000088", justifyContent: "flex-end" },
+  settingsOverlay: { flex: 1, backgroundColor: "#00000088", justifyContent: "flex-end", alignItems: "center" },
   settingsModal: {
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     borderTopWidth: 1,
-    padding: 16
+    padding: 16,
+    width: "100%",
   },
+  settingsModalMobile: { width: "100%" },
   settingsTitle: { fontSize: 18, fontWeight: "800", marginBottom: 10 },
   settingsRow: {
     flexDirection: "row",

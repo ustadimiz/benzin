@@ -376,6 +376,12 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
   const fuelLabels = { benzin: i.benzin, motorin: i.motorin, lpg: i.lpg };
   const { width: windowWidth } = useWindowDimensions();
   const layout = useResponsiveLayout();
+  const isWide = windowWidth >= 768;
+  const isDesktop = windowWidth >= 1200;
+  const wideModalWidth = Math.max(
+    420,
+    Math.min(isDesktop ? 860 : 720, windowWidth - (isDesktop ? 96 : 32))
+  );
 
   // Responsive: determine number of columns
   const numColumns = windowWidth >= 1200 ? 3 : windowWidth >= 768 ? 2 : 1;
@@ -585,7 +591,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
         <TouchableWithoutFeedback onPress={() => { setShowCityModal(false); setSearchText(""); }}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }, layout.modalMaxWidth && { maxWidth: layout.modalMaxWidth, width: "94%", alignSelf: "center" }, numColumns > 1 && styles.modalBoxWide]}>
+              <View style={[styles.modalBox, isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile, { backgroundColor: C.modalBg, borderColor: C.modalBorder }]}>
               <Text style={[styles.modalTitle, { color: C.modalTitle }]}>{i.selectCity}</Text>
               <TextInput
                 style={[styles.searchInput, { backgroundColor: C.searchInput, borderColor: C.searchInputBorder, color: C.searchInputText }]}
@@ -730,7 +736,7 @@ const styles = StyleSheet.create({
   emptyStateText: { fontSize: 14, fontWeight: "700" },
   emptyStateSub: { fontSize: 12, marginTop: 6 },
 
-  modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end", alignItems: "center" },
   modalBox: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -740,6 +746,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     width: "100%",
   },
+  modalBoxMobile: { width: "100%" },
   modalTitle: { fontSize: 18, fontWeight: "800", marginBottom: 10 },
   cityList: { flexGrow: 0, flexShrink: 1 },
   searchInput: {
@@ -774,11 +781,7 @@ const styles = StyleSheet.create({
   cityPickerWide: { flex: 1 },
   columnWrapper: { gap: 10, justifyContent: "flex-start" },
   modalBoxWide: {
-    maxWidth: 500,
     maxHeight: "65%",
-    alignSelf: "center",
-    width: "90%",
-    borderRadius: 24,
     borderWidth: 1,
   },
 });

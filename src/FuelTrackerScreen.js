@@ -688,7 +688,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
-                <View style={styles.modalBox}>
+                <View style={[styles.modalBox, isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile]}>
             <Text style={styles.modalTitle}>{editingVehicleId ? i.editVehicleTitle : i.addVehicleTitle}</Text>
             <TextInput
               style={styles.input}

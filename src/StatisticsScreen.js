@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, useWindowDimensions, View } from "react-native";
 import { t as getT } from "./i18n";
 import { useResponsiveLayout } from "./responsive";
 
@@ -116,6 +116,13 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
   const i = getT(lang);
   const C = themeMode === "light" ? LIGHT : DARK;
   const layout = useResponsiveLayout();
+  const { width: windowWidth } = useWindowDimensions();
+  const isWide = windowWidth >= 768;
+  const isDesktop = windowWidth >= 1200;
+  const wideModalWidth = Math.max(
+    420,
+    Math.min(isDesktop ? 860 : 720, windowWidth - (isDesktop ? 96 : 32))
+  );
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -354,7 +361,7 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
         <TouchableWithoutFeedback onPress={() => setShowFuelModal(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
+              <View style={[styles.modalBox, isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
             <Text style={[styles.modalTitle, { color: C.title }]}>{i.statsSelectFuel}</Text>
             {[
               { key: "benzin", label: fuelLabels.benzin },
@@ -383,7 +390,7 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
         <TouchableWithoutFeedback onPress={() => setShowBrandModal(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
+              <View style={[styles.modalBox, isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
             <Text style={[styles.modalTitle, { color: C.title }]}>{i.statsSelectBrand}</Text>
             {BRANDS.map((b) => (
               <Pressable
@@ -408,7 +415,7 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
         <TouchableWithoutFeedback onPress={() => { setShowCityModal(false); setCitySearch(""); }}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.modalBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
+              <View style={[styles.modalBox, isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
             <Text style={[styles.modalTitle, { color: C.title }]}>{i.statsSelectCity}</Text>
             <TextInput
               style={[styles.searchInput, { backgroundColor: C.chipBg, borderColor: C.chipBorder, color: C.chipText }]}
@@ -523,13 +530,15 @@ const styles = StyleSheet.create({
   },
   axisText: { fontSize: 10, fontWeight: "700" },
 
-  modalOverlay: { flex: 1, backgroundColor: "#00000099", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: "#00000099", justifyContent: "flex-end", alignItems: "center" },
   modalBox: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderTopWidth: 1,
     padding: 14,
+    width: "100%",
   },
+  modalBoxMobile: { width: "100%" },
   modalTitle: { fontSize: 16, fontWeight: "800", marginBottom: 10 },
   searchInput: {
     borderWidth: 1,

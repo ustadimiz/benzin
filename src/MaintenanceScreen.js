@@ -12,6 +12,7 @@ import {
   Text,
   TextInput,
   TouchableWithoutFeedback,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { t as getT } from "./i18n";
@@ -103,6 +104,13 @@ const fmt = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFr
 export default function MaintenanceScreen({ lang = "tr", userId = "default", themeMode = "dark" }) {
   const isDark = themeMode === "dark";
   const layout = useResponsiveLayout();
+  const { width: windowWidth } = useWindowDimensions();
+  const isWide = windowWidth >= 768;
+  const isDesktop = windowWidth >= 1200;
+  const wideModalWidth = Math.max(
+    420,
+    Math.min(isDesktop ? 860 : 720, windowWidth - (isDesktop ? 96 : 32))
+  );
   const i = getT(lang);
   const MAINTENANCE_TYPES = i.maintenanceTypeList;
   const useFluidColumns = Platform.OS === "web" && !layout.compact;
@@ -459,7 +467,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
-                <View style={styles.modalBox}>
+                <View style={[styles.modalBox, isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile]}>
             <Text style={styles.modalTitle}>{editingId ? i.editMaintTitle : i.addMaintTitle}</Text>
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: layout.compact ? 420 : 500 }}>
               <Text style={styles.inputLabel}>{i.datePlaceholder}</Text>
@@ -579,7 +587,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
         <TouchableWithoutFeedback onPress={() => setShowMaintenanceModal(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.modalBox, { flexDirection: "column", height: "90%" }]}>
+              <View style={[styles.modalBox, isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile, { flexDirection: "column", height: "90%" }]}>
             <Text style={styles.modalTitle}>{i.selectMaintType}</Text>
 
             {/* Manuel Giriş Bölümü */}
@@ -764,7 +772,7 @@ const createStyles = (isDark) => StyleSheet.create({
   },
   fabText: { color: "#F2FAFF", fontWeight: "800", fontSize: 14 },
 
-  modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end", alignItems: "center" },
   modalBox: {
     backgroundColor: isDark ? "#0F2838" : "#F8FCFF",
     borderTopLeftRadius: 24,
@@ -773,7 +781,9 @@ const createStyles = (isDark) => StyleSheet.create({
     borderTopWidth: 1,
     borderColor: isDark ? "#1D445A" : "#C7D9E5",
     maxHeight: "90%",
+    width: "100%",
   },
+  modalBoxMobile: { width: "100%" },
   modalTitle: { color: isDark ? "#F0F9FF" : "#12384D", fontSize: 18, fontWeight: "800", marginBottom: 12 },
 
   input: {
