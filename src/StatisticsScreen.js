@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { t as getT } from "./i18n";
 import previewHistoryData from "../allprices-preview.json";
 import { useResponsiveLayout } from "./responsive";
+import PullToRefreshScrollView from "./components/PullToRefreshScrollView";
 
 const HISTORY_FEED_URL = "https://raw.githubusercontent.com/ustadimiz/fuel-data/refs/heads/main/allprices.json";
 const FUEL_ACCENT = { benzin: "#F59E0B", motorin: "#0EA5E9", lpg: "#22C55E" };
@@ -119,7 +120,6 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
   const layout = useResponsiveLayout();
 
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [snapshots, setSnapshots] = useState([]);
   const [selectedFuel, setSelectedFuel] = useState("benzin");
   const [selectedBrand, setSelectedBrand] = useState("shell");
@@ -164,7 +164,6 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
       setSnapshots([]);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -244,10 +243,15 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
   }, [filtered, chartW]);
 
   return (
-    <ScrollView
+    <PullToRefreshScrollView
       style={styles.container}
       contentContainerStyle={[styles.contentContainer, { paddingHorizontal: layout.pagePadding, maxWidth: layout.contentMaxWidth || undefined }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#D3ECFB" />}
+      onRefresh={load}
+      refreshTintColor="#D3ECFB"
+      indicatorColor="#D3ECFB"
+      indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
+      indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
+      indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
     >
       <View style={[styles.headerCard, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
         <Text style={[styles.title, { color: C.title }]}>{i.statsTitle}</Text>
@@ -438,7 +442,7 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </PullToRefreshScrollView>
   );
 }
 

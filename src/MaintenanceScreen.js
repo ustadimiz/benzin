@@ -7,7 +7,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +17,8 @@ import { t as getT } from "./i18n";
 import { loadFuelState, loadMaintenanceState, saveFuelState, saveMaintenanceState, loadMaintenanceTypes } from "./userData";
 import { useResponsiveLayout } from "./responsive";
 import DrivingLogoLoader from "./DrivingLogoLoader";
+import PullToRefreshScrollView from "./components/PullToRefreshScrollView";
+import PullToRefreshFlatList from "./components/PullToRefreshFlatList";
 
 const columnWidths = {
   date: 92,
@@ -89,7 +90,6 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [entryForm, setEntryForm] = useState(emptyEntry());
-  const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [maintenanceTypeOptions, setMaintenanceTypeOptions] = useState([]);
   const [manualMaintenanceInput, setManualMaintenanceInput] = useState("");
@@ -128,9 +128,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   }, [userId]);
 
   const onRefresh = async () => {
-    setRefreshing(true);
     await loadData();
-    setRefreshing(false);
   };
 
   const persist = async (nextEntries) => {
@@ -305,29 +303,39 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
       </ScrollView>
 
       {!selectedVehicle ? (
-        <ScrollView
+        <PullToRefreshScrollView
           style={styles.emptyRefreshWrap}
           contentContainerStyle={styles.emptyRefreshContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
+          onRefresh={onRefresh}
+          refreshTintColor="#D3ECFB"
+          indicatorColor="#D3ECFB"
+          indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
+          indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
+          indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
         >
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateIcon}>🔧</Text>
             <Text style={styles.emptyStateText}>{i.noVehicle}</Text>
             <Text style={styles.emptyStateSub}>{i.noMaintVehicleSub}</Text>
           </View>
-        </ScrollView>
+        </PullToRefreshScrollView>
       ) : (
         <>
           {vehicleEntries.length === 0 ? (
-            <ScrollView
+            <PullToRefreshScrollView
               style={styles.emptyRefreshWrap}
               contentContainerStyle={styles.emptyRefreshContent}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
+              onRefresh={onRefresh}
+              refreshTintColor="#D3ECFB"
+              indicatorColor="#D3ECFB"
+              indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
+              indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
+              indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
             >
               <View style={styles.emptyState}>
                 <Text style={styles.emptyStateText}>{i.noMaintEntry}</Text>
               </View>
-            </ScrollView>
+            </PullToRefreshScrollView>
           ) : (
             <View style={styles.tableCard}>
               <ScrollView
@@ -358,13 +366,18 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                 </View>
 
                 {/* Tablo Verileri */}
-                <FlatList
+                <PullToRefreshFlatList
                   data={vehicleEntries}
                   keyExtractor={(item) => item.id}
                   scrollEnabled
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ paddingBottom: 20 }}
-                  refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />}
+                  onRefresh={onRefresh}
+                  refreshTintColor="#D3ECFB"
+                  indicatorColor="#D3ECFB"
+                  indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
+                  indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
+                  indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
                   renderItem={({ item, index }) => (
                     <View style={[styles.gridRow, index % 2 === 1 && styles.gridRowAlt]}>
                   <Text numberOfLines={1} style={[styles.gridCell, col.date]}>{item.date}</Text>
