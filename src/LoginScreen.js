@@ -67,6 +67,20 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
   }
 
   function handleGuestContinue() {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const confirmed = window.confirm(`${T.guestWarningTitle}\n\n${T.guestWarningMsg}`);
+      if (confirmed) {
+        onAuthSuccess({
+          id: "guest-local",
+          username: "guest",
+          displayName: T.guestDisplayName,
+        });
+      } else {
+        switchMode("register");
+      }
+      return;
+    }
+
     Alert.alert(T.guestWarningTitle, T.guestWarningMsg, [
       {
         text: T.guestWarningCancel,
@@ -86,6 +100,14 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
   }
 
   function handleForgotPassword() {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const goRegister = window.confirm(`${T.forgotPasswordTitle}\n\n${T.forgotPasswordMsg}`);
+      if (goRegister) {
+        switchMode("register");
+      }
+      return;
+    }
+
     Alert.alert(T.forgotPasswordTitle, T.forgotPasswordMsg, [
       {
         text: T.forgotPasswordRegister,
@@ -147,6 +169,26 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
     styles.input,
     focusedField === field && styles.inputFocused,
   ];
+  const webInputStyle = Platform.OS === "web" ? styles.inputTextWeb : null;
+
+  function renderClearButton(field, value, clearFn) {
+    if (!value) return null;
+    return (
+      <Pressable
+        onPress={clearFn}
+        style={styles.clearBtn}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={T.clearFieldLabel}
+      >
+        <MaterialCommunityIcons
+          name="close-circle"
+          size={18}
+          color={focusedField === field ? PALETTE.accent : PALETTE.textMuted}
+        />
+      </Pressable>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -219,7 +261,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                       style={styles.inputIcon}
                     />
                     <TextInput
-                      style={styles.inputText}
+                      style={[styles.inputText, webInputStyle]}
                       placeholder={T.placeholderDisplayName}
                       placeholderTextColor={PALETTE.textMuted}
                       value={displayName}
@@ -228,6 +270,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                       onFocus={() => setFocusedField("displayName")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    {renderClearButton("displayName", displayName, () => setDisplayName(""))}
                   </View>
                 </View>
               )}
@@ -244,7 +287,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                       style={styles.inputIcon}
                     />
                     <TextInput
-                      style={styles.inputText}
+                      style={[styles.inputText, webInputStyle]}
                       placeholder={T.placeholderEmail}
                       placeholderTextColor={PALETTE.textMuted}
                       value={email}
@@ -255,6 +298,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                       onFocus={() => setFocusedField("email")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    {renderClearButton("email", email, () => setEmail(""))}
                   </View>
                 </View>
               )}
@@ -270,7 +314,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={styles.inputText}
+                    style={[styles.inputText, webInputStyle]}
                     placeholder={mode === "login" ? T.placeholderLoginIdentifier : T.placeholderUsername}
                     placeholderTextColor={PALETTE.textMuted}
                     value={username}
@@ -281,6 +325,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                     onFocus={() => setFocusedField("username")}
                     onBlur={() => setFocusedField(null)}
                   />
+                  {renderClearButton("username", username, () => setUsername(""))}
                 </View>
               </View>
 
@@ -295,7 +340,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                     style={styles.inputIcon}
                   />
                   <TextInput
-                    style={[styles.inputText, styles.flex]}
+                    style={[styles.inputText, webInputStyle, styles.flex]}
                     placeholder={T.placeholderPassword}
                     placeholderTextColor={PALETTE.textMuted}
                     value={password}
@@ -306,6 +351,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                     onFocus={() => setFocusedField("password")}
                     onBlur={() => setFocusedField(null)}
                   />
+                  {renderClearButton("password", password, () => setPassword(""))}
                   <Pressable onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn} hitSlop={8}>
                     <MaterialCommunityIcons
                       name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -328,7 +374,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                       style={styles.inputIcon}
                     />
                     <TextInput
-                      style={[styles.inputText, styles.flex]}
+                      style={[styles.inputText, webInputStyle, styles.flex]}
                       placeholder={T.placeholderConfirmPassword}
                       placeholderTextColor={PALETTE.textMuted}
                       value={confirmPassword}
@@ -339,6 +385,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                       onFocus={() => setFocusedField("confirm")}
                       onBlur={() => setFocusedField(null)}
                     />
+                    {renderClearButton("confirm", confirmPassword, () => setConfirmPassword(""))}
                     <Pressable onPress={() => setShowConfirm((v) => !v)} style={styles.eyeBtn} hitSlop={8}>
                       <MaterialCommunityIcons
                         name={showConfirm ? "eye-off-outline" : "eye-outline"}
@@ -453,6 +500,7 @@ const TR = {
   guestWarningConfirm: "Evet, devam et",
   guestWarningCancel: "Vazgeç, kayıt ol",
   errorDisplayName: "Ad soyad boş bırakılamaz.",
+  clearFieldLabel: "Alanı temizle",
   errorEmailEmpty: "E-posta boş bırakılamaz.",
   errorEmailInvalid: "Geçerli bir e-posta adresi giriniz.",
   errorEmailTaken: "Bu e-posta zaten kullanılıyor.",
@@ -511,6 +559,7 @@ const EN = {
   guestWarningConfirm: "Yes, continue",
   guestWarningCancel: "Cancel, register",
   errorDisplayName: "Full name cannot be empty.",
+  clearFieldLabel: "Clear field",
   errorEmailEmpty: "Email cannot be empty.",
   errorEmailInvalid: "Please enter a valid email address.",
   errorEmailTaken: "This email is already in use.",
@@ -658,6 +707,17 @@ const styles = StyleSheet.create({
     color: PALETTE.textPrimary,
     fontSize: 15,
     fontWeight: "500",
+  },
+  inputTextWeb: {
+    outlineStyle: "none",
+    outlineWidth: 0,
+    borderWidth: 0,
+    backgroundColor: "transparent",
+    boxShadow: "none",
+  },
+  clearBtn: {
+    padding: 4,
+    marginLeft: 4,
   },
   eyeBtn: { padding: 4, marginLeft: 4 },
 

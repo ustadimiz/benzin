@@ -43,6 +43,18 @@ export function injectWebStyles() {
       -moz-osx-font-smoothing: grayscale;
     }
 
+    /* Normalize browser input focus visuals for react-native-web TextInput */
+    input, textarea {
+      outline: none;
+      box-shadow: none;
+      border: 0;
+      background: transparent;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
     /* Thin scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
