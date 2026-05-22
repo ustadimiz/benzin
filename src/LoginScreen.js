@@ -397,7 +397,13 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
                     onBlur={() => setFocusedField(null)}
                   />
                   {renderClearButton("password", password, () => setPassword(""))}
-                  <Pressable onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn} hitSlop={8}>
+                  <Pressable
+                    onPress={() => setShowPassword((v) => !v)}
+                    style={styles.eyeBtn}
+                    hitSlop={8}
+                    focusable={false}
+                    {...(Platform.OS === "web" ? { tabIndex: -1 } : {})}
+                  >
                     <MaterialCommunityIcons
                       name={showPassword ? "eye-off-outline" : "eye-outline"}
                       size={18}
@@ -433,7 +439,13 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
                       onBlur={() => setFocusedField(null)}
                     />
                     {renderClearButton("confirm", confirmPassword, () => setConfirmPassword(""))}
-                    <Pressable onPress={() => setShowConfirm((v) => !v)} style={styles.eyeBtn} hitSlop={8}>
+                    <Pressable
+                      onPress={() => setShowConfirm((v) => !v)}
+                      style={styles.eyeBtn}
+                      hitSlop={8}
+                      focusable={false}
+                      {...(Platform.OS === "web" ? { tabIndex: -1 } : {})}
+                    >
                       <MaterialCommunityIcons
                         name={showConfirm ? "eye-off-outline" : "eye-outline"}
                         size={18}
