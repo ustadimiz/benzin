@@ -593,7 +593,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 10,
     paddingTop: 8,
-    backgroundColor: "transparent"
+    backgroundColor: "transparent",
+    width: "100%",
+    maxWidth: 1240,
+    alignSelf: "center"
   },
   tabBar: {
     flexDirection: "row",
@@ -623,7 +626,7 @@ const styles = StyleSheet.create({
   tabIcon: { fontSize: 13, lineHeight: 14 },
   tabLabel: { fontWeight: "700", fontSize: 10, maxWidth: "100%" },
 
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 12, width: "100%" },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 12, width: "100%", maxWidth: 1240, alignSelf: "center" },
 
   settingsOverlay: { flex: 1, backgroundColor: "#00000088", justifyContent: "flex-end" },
   settingsModal: {
@@ -734,6 +737,9 @@ const styles = StyleSheet.create({
   desktopLayout: {
     flex: 1,
     flexDirection: "row",
+    width: "100%",
+    maxWidth: 1520,
+    alignSelf: "center",
   },
   sidebar: {
     width: 220,
@@ -762,17 +768,22 @@ const styles = StyleSheet.create({
   sidebarTabLabel: { fontSize: 14, fontWeight: "700" },
   desktopContent: {
     flex: 1,
+    width: "100%",
   },
   desktopContentInner: {
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 32,
     flexGrow: 1,
+    width: "100%",
+    alignItems: "center",
   },
 
   // Responsive: Tablet styles
   bottomNavWrapTablet: {
     paddingHorizontal: 40,
+    maxWidth: 1240,
+    alignSelf: "center",
   },
   tabBarTablet: {
     maxWidth: 500,
