@@ -7,7 +7,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +18,7 @@ import { t as getT } from "./i18n";
 import { loadFuelState, saveFuelState } from "./userData";
 import { useResponsiveLayout } from "./responsive";
 import DrivingLogoLoader from "./DrivingLogoLoader";
+import PullToRefreshScrollView from "./components/PullToRefreshScrollView";
 
 const fuelAccent = { benzin: "#F59E0B", motorin: "#0EA5E9", lpg: "#22C55E" };
 const fmt = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -211,7 +211,6 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editingVehicleId, setEditingVehicleId] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasScrolledMain, setHasScrolledMain] = useState(false);
   const tableTouchStartRef = useRef({ x: 0, y: 0 });
@@ -251,9 +250,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   }, [userId]);
 
   const onRefresh = async () => {
-    setRefreshing(true);
     await loadData();
-    setRefreshing(false);
   };
 
   // ── Storage kaydet ──────────────────────────────────────────────
@@ -473,13 +470,19 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView
+      <PullToRefreshScrollView
         style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}
         contentContainerStyle={[styles.containerContent, { flexGrow: 1 }]}
         showsVerticalScrollIndicator={false}
         overScrollMode="always"
         alwaysBounceVertical
         bounces
+        onRefresh={onRefresh}
+        refreshTintColor="#D3ECFB"
+        indicatorColor="#D3ECFB"
+        indicatorPullText={lang === "tr" ? "Yenilemek icin asagi cekin" : "Pull down to refresh"}
+        indicatorReleaseText={lang === "tr" ? "Yenilemek icin birakin" : "Release to refresh"}
+        indicatorLoadingText={lang === "tr" ? "Yukleniyor..." : "Refreshing..."}
         onScroll={(event) => {
           if (hasScrolledMain) return;
           if (event.nativeEvent.contentOffset.y > 12) {
@@ -487,11 +490,6 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           }
         }}
         scrollEventThrottle={16}
-        refreshControl={
-          isTouchDevice
-            ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D3ECFB" />
-            : undefined
-        }
       >
 
       {/* Araç Seçici */}
@@ -672,7 +670,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
         </>
       )}
 
-      </ScrollView>
+      </PullToRefreshScrollView>
 
       {showScrollHint && (
         <View pointerEvents="none" style={styles.scrollHintWrap}>
