@@ -70,14 +70,15 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focusedField, setFocusedField] = useState(null);
+  const displayNameInputRef = useRef(null);
   const usernameInputRef = useRef(null);
 
   const T = lang === "tr" ? TR : EN;
 
   useEffect(() => {
-    if (mode !== "login") return;
+    const targetRef = mode === "login" ? usernameInputRef : displayNameInputRef;
     const timer = setTimeout(() => {
-      usernameInputRef.current?.focus?.();
+      targetRef.current?.focus?.();
     }, 60);
     return () => clearTimeout(timer);
   }, [mode]);
@@ -297,12 +298,14 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr", themeMode = "d
                       style={styles.inputIcon}
                     />
                     <TextInput
+                      ref={displayNameInputRef}
                       style={[styles.inputText, webInputStyle]}
                       placeholder={T.placeholderDisplayName}
                       placeholderTextColor={palette.textMuted}
                       value={displayName}
                       onChangeText={setDisplayName}
                       autoCapitalize="words"
+                      autoFocus={mode === "register"}
                       onFocus={() => setFocusedField("displayName")}
                       onBlur={() => setFocusedField(null)}
                     />
