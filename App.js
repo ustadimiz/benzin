@@ -348,28 +348,28 @@ export default function App() {
         <View style={[styles.tabBar, !isDarkTheme && styles.tabBarLight, { backgroundColor: theme.tabBg, borderColor: theme.tabBorder }, isTablet && styles.tabBarTablet]}>
           <Pressable
             onPress={() => setActiveTab("prices")}
-            style={[styles.tabBtn, activeTab === "prices" && { backgroundColor: theme.tabActiveBg }]}
+            style={[styles.tabBtn, isTablet && styles.tabBtnTablet, activeTab === "prices" && { backgroundColor: theme.tabActiveBg }]}
           >
             <Text style={styles.tabIcon}>⛽</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "prices" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabPrices}</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("tracker")}
-            style={[styles.tabBtn, activeTab === "tracker" && { backgroundColor: theme.tabActiveBg }]}
+            style={[styles.tabBtn, isTablet && styles.tabBtnTablet, activeTab === "tracker" && { backgroundColor: theme.tabActiveBg }]}
           >
             <Text style={styles.tabIcon}>📊</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "tracker" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabFuel}</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("maintenance")}
-            style={[styles.tabBtn, activeTab === "maintenance" && { backgroundColor: theme.tabActiveBg }]}
+            style={[styles.tabBtn, isTablet && styles.tabBtnTablet, activeTab === "maintenance" && { backgroundColor: theme.tabActiveBg }]}
           >
             <Text style={styles.tabIcon}>🔧</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "maintenance" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabMaintenance}</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab("stats")}
-            style={[styles.tabBtn, activeTab === "stats" && { backgroundColor: theme.tabActiveBg }]}
+            style={[styles.tabBtn, isTablet && styles.tabBtnTablet, activeTab === "stats" && { backgroundColor: theme.tabActiveBg }]}
           >
             <Text style={styles.tabIcon}>📈</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "stats" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabStats}</Text>
@@ -790,13 +790,18 @@ const styles = StyleSheet.create({
 
   // Responsive: Tablet styles
   bottomNavWrapTablet: {
-    paddingHorizontal: 40,
+    paddingHorizontal: 20,
     maxWidth: 1240,
     alignSelf: "center",
   },
   tabBarTablet: {
-    maxWidth: 500,
+    width: "100%",
+    maxWidth: 760,
     alignSelf: "center",
+  },
+  tabBtnTablet: {
+    gap: 4,
+    paddingHorizontal: 8,
   },
   tabLabelTablet: { fontSize: 12 },
   contentTablet: {
