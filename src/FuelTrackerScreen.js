@@ -206,7 +206,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     420,
     Math.min(isDesktop ? 860 : 720, windowWidth - (isDesktop ? 96 : 32))
   );
-  const useFluidColumns = Platform.OS === "web" && !layout.compact;
+  const useFluidColumns = Platform.OS === "web" && !layout.compact && isDesktop;
   const col = useFluidColumns
     ? {
         date: { flex: 1.1, minWidth: 92 },
@@ -685,7 +685,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           <Pressable onPress={() => {
             setShowDatePicker(false);
             setShowAddEntry(true);
-          }} style={styles.fab}>
+          }} style={Platform.OS === "web" && isDesktop ? styles.fabDesktop : styles.fab}>
             <Text style={styles.fabText}>{i.addFuelEntry}</Text>
           </Pressable>
         </>
@@ -1033,6 +1033,16 @@ const createStyles = (isDark) => StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 12,
+  },
+  fabDesktop: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 6,
+    backgroundColor: "#1B7FAB",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
   },
   fabText: { color: "#F2FAFF", fontWeight: "800", fontSize: 14 },
 
