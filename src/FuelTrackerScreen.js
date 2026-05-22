@@ -206,6 +206,30 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     420,
     Math.min(isDesktop ? 860 : 720, windowWidth - (isDesktop ? 96 : 32))
   );
+  const useFluidColumns = Platform.OS === "web" && !layout.compact;
+  const col = useFluidColumns
+    ? {
+        date: { flex: 1.1, minWidth: 92 },
+        km: { flex: 1.0, minWidth: 82 },
+        type: { flex: 1.0, minWidth: 76 },
+        litre: { flex: 0.9, minWidth: 72 },
+        amount: { flex: 1.0, minWidth: 92 },
+        unit: { flex: 1.0, minWidth: 92 },
+        tlPerKm: { flex: 1.0, minWidth: 88 },
+        litrePer100: { flex: 1.1, minWidth: 96 },
+        actions: { width: 78 },
+      }
+    : {
+        date: { width: columnWidths.date },
+        km: { width: columnWidths.km },
+        type: { width: columnWidths.type },
+        litre: { width: columnWidths.litre },
+        amount: { width: columnWidths.amount },
+        unit: { width: columnWidths.unit },
+        tlPerKm: { width: columnWidths.tlPerKm },
+        litrePer100: { width: columnWidths.litrePer100 },
+        actions: { width: columnWidths.actions },
+      };
 
   const [vehicles, setVehicles] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -270,12 +294,14 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   };
 
   const handleTableTouchStart = (event) => {
+    if (useFluidColumns) return;
     const point = getTouchPoint(event.nativeEvent);
     if (!point) return;
     tableTouchStartRef.current = point;
   };
 
   const shouldCaptureHorizontalMove = (event) => {
+    if (useFluidColumns) return false;
     if (!isTouchDevice) return false;
     const point = getTouchPoint(event.nativeEvent);
     if (!point) return false;
@@ -470,10 +496,9 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={[styles.container, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}>
       <PullToRefreshScrollView
-        style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}
-        contentContainerStyle={[styles.containerContent, { flexGrow: 1 }]}
+        contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         overScrollMode="always"
         alwaysBounceVertical
@@ -570,36 +595,36 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
             </View>
           )}
 
-          <View style={[styles.tableCard, isDesktop && styles.tableCardDesktop]}>
+          <View style={styles.tableCard}>
             <ScrollView
-              horizontal
+              horizontal={!useFluidColumns}
               nestedScrollEnabled
               directionalLockEnabled
-              showsHorizontalScrollIndicator
+              showsHorizontalScrollIndicator={!useFluidColumns}
               onTouchStart={handleTableTouchStart}
               onStartShouldSetResponderCapture={() => false}
               onMoveShouldSetResponderCapture={shouldCaptureHorizontalMove}
               contentContainerStyle={styles.tableScrollContent}
-              style={Platform.OS === "web" && isTouchDevice ? { touchAction: "pan-x pan-y" } : undefined}
+              style={Platform.OS === "web" && isTouchDevice && !useFluidColumns ? { touchAction: "pan-x pan-y" } : { flex: 1 }}
             >
-              <View style={[styles.tableInner, isWide && styles.tableInnerWide, { minWidth: tableMinWidth }]}>
+              <View
+                style={[
+                  styles.tableInner,
+                  useFluidColumns && styles.tableInnerWide,
+                  { minWidth: useFluidColumns ? 0 : tableMinWidth },
+                ]}
+              >
                 {/* Grid başlığı */}
                 <View style={styles.gridHeader}>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.date }]}>{i.colDate}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.km }]}>{i.colKm}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.type }]}>{i.colType}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.litre }]}>{i.colLitre}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.amount }]}>{i.colAmount}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.unit }]}>{i.colUnit}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.tlPerKm }]}>{i.colTlPerKm}</Text>
-                  <Text numberOfLines={1} style={[styles.gridHeaderCell, { width: columnWidths.litrePer100 }]}>{i.colLitrePer100km}</Text>
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.gridHeaderCell,
-                      isWide ? { flex: 1, minWidth: columnWidths.actions } : { width: columnWidths.actions },
-                    ]}
-                  ></Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.date]}>{i.colDate}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.km]}>{i.colKm}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.type]}>{i.colType}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.litre]}>{i.colLitre}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.amount]}>{i.colAmount}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.unit]}>{i.colUnit}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.tlPerKm]}>{i.colTlPerKm}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.litrePer100]}>{i.colLitrePer100km}</Text>
+                  <Text numberOfLines={1} style={[styles.gridHeaderCell, col.actions]}></Text>
                 </View>
 
                 {vehicleEntries.length === 0 ? (
@@ -620,24 +645,19 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
                       const accent = fuelAccent[item.fuelType] || "#F59E0B";
                       return (
                         <View style={[styles.gridRow, index % 2 === 1 && styles.gridRowAlt]}>
-                          <Text numberOfLines={1} style={[styles.gridCell, styles.gridCellLeft, { width: columnWidths.date }]}>{item.date}</Text>
-                          <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.km }]}>{item.km}</Text>
-                          <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.type, color: accent, fontWeight: "700" }]}>
+                          <Text numberOfLines={1} style={[styles.gridCell, styles.gridCellLeft, col.date]}>{item.date}</Text>
+                          <Text numberOfLines={1} style={[styles.gridCell, col.km]}>{item.km}</Text>
+                          <Text numberOfLines={1} style={[styles.gridCell, col.type, { color: accent, fontWeight: "700" }]}>
                             {fuelLabels[item.fuelType]}
                           </Text>
-                          <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.litre }]}>{item.litre}</Text>
-                          <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.amount }]}>{item.totalAmount} ₺</Text>
-                          <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.unit }]}>
+                          <Text numberOfLines={1} style={[styles.gridCell, col.litre]}>{item.litre}</Text>
+                          <Text numberOfLines={1} style={[styles.gridCell, col.amount]}>{item.totalAmount} ₺</Text>
+                          <Text numberOfLines={1} style={[styles.gridCell, col.unit]}>
                             {unitPrice ? fmt.format(unitPrice) + " ₺" : "-"}
                           </Text>
-                          <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.tlPerKm }]}>{tlPer1km ? fmt.format(tlPer1km) : "-"}</Text>
-                          <Text numberOfLines={1} style={[styles.gridCell, { width: columnWidths.litrePer100 }]}>{litrePer100km ? fmt.format(litrePer100km) : "-"}</Text>
-                          <View
-                            style={[
-                              styles.rowActions,
-                              isWide ? { flex: 1, minWidth: columnWidths.actions } : { width: columnWidths.actions },
-                            ]}
-                          >
+                          <Text numberOfLines={1} style={[styles.gridCell, col.tlPerKm]}>{tlPer1km ? fmt.format(tlPer1km) : "-"}</Text>
+                          <Text numberOfLines={1} style={[styles.gridCell, col.litrePer100]}>{litrePer100km ? fmt.format(litrePer100km) : "-"}</Text>
+                          <View style={[styles.rowActions, col.actions]}>
                             <Pressable
                               style={styles.rowIconBtn}
                               onPress={() => startEdit(item)}
@@ -665,7 +685,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           <Pressable onPress={() => {
             setShowDatePicker(false);
             setShowAddEntry(true);
-          }} style={Platform.OS === "web" ? styles.fabWeb : styles.fab}>
+          }} style={styles.fab}>
             <Text style={styles.fabText}>{i.addFuelEntry}</Text>
           </Pressable>
         </>
@@ -886,10 +906,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
 }
 
 const createStyles = (isDark) => StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingVertical: 12 },
-  containerContent: { paddingBottom: 18 },
-  containerWide: { maxWidth: 960, alignSelf: "center", width: "100%" },
-  containerDesktop: { maxWidth: 1100, paddingHorizontal: 24 },
+  container: { flex: 1, paddingHorizontal: 16, paddingVertical: 12, width: "100%", alignSelf: "center" },
   scrollHintWrap: {
     position: "absolute",
     left: 0,
@@ -931,8 +948,8 @@ const createStyles = (isDark) => StyleSheet.create({
   headerHintText: { color: isDark ? "#9BBBCF" : "#4A7588", fontSize: 12, marginTop: 2 },
 
   // Araç seçici
-  vehicleRow: { maxHeight: 78, marginBottom: 12 },
-  vehicleRowContent: { gap: 10, paddingVertical: 6, alignItems: "center", paddingRight: 8 },
+  vehicleRow: { maxHeight: 76, marginBottom: 10 },
+  vehicleRowContent: { gap: 10, paddingVertical: 4, alignItems: "center" },
   vehicleChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: isDark ? "#0F2331" : "#FFFFFF", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10,
@@ -967,11 +984,11 @@ const createStyles = (isDark) => StyleSheet.create({
     borderRadius: 14,
     padding: 8,
     marginBottom: 72,
+    flex: 1,
   },
-  tableCardDesktop: { marginBottom: 24 },
-  tableScrollContent: { flexGrow: 1 },
+  tableScrollContent: { paddingRight: 4, flexGrow: 1 },
   tableInner: { alignSelf: "flex-start" },
-  tableInnerWide: { width: "100%" },
+  tableInnerWide: { width: "100%", alignSelf: "stretch" },
   gridHeader: {
     flexDirection: "row", backgroundColor: isDark ? "#133246" : "#EAF3F9", paddingHorizontal: 6,
     paddingVertical: 9, borderRadius: 10, marginBottom: 6, width: "100%"
@@ -980,10 +997,10 @@ const createStyles = (isDark) => StyleSheet.create({
   gridRow: {
     flexDirection: "row", backgroundColor: isDark ? "#102737" : "#F8FCFF", paddingHorizontal: 6,
     paddingVertical: 10, borderRadius: 10, marginBottom: 6,
-    borderWidth: 1, borderColor: isDark ? "#1E4359" : "#E0EAEF", alignItems: "center", width: "100%"
+    alignItems: "center", width: "100%"
   },
-  gridRowAlt: { backgroundColor: isDark ? "#0E2230" : "#F0F6FA", borderColor: isDark ? "#1A3A4D" : "#D9E7F0" },
-  gridCell: { color: isDark ? "#D4E8F4" : "#163041", fontSize: 11, textAlign: "center" },
+  gridRowAlt: { backgroundColor: isDark ? "#0A1B26" : "#F0F6FA" },
+  gridCell: { color: isDark ? "#D3ECFB" : "#163041", fontSize: 12, fontWeight: "500", textAlign: "center" },
   gridCellLeft: { textAlign: "left" },
   rowActions: {
     flexDirection: "row",
@@ -1011,21 +1028,13 @@ const createStyles = (isDark) => StyleSheet.create({
 
   // FAB
   fab: {
-    position: "absolute", bottom: 6, right: 0, left: 0,
-    backgroundColor: "#1B7FAB", borderRadius: 14, paddingVertical: 13,
-    alignItems: "center"
-  },
-  fabWeb: {
-    position: "relative",
-    width: "100%",
     backgroundColor: "#1B7FAB",
-    borderRadius: 14,
-    paddingVertical: 13,
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: "center",
-    marginTop: 10,
-    marginBottom: 6,
+    marginTop: 12,
   },
-  fabText: { color: "#F2FAFF", fontWeight: "800", fontSize: 15 },
+  fabText: { color: "#F2FAFF", fontWeight: "800", fontSize: 14 },
 
   // Boş durum
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 50 },
