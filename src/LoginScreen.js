@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { login, register } from "./auth";
+import { useResponsiveLayout } from "./responsive";
 
 const PALETTE = {
   bg: "#081B26",
@@ -34,6 +35,7 @@ const PALETTE = {
 };
 
 export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
+  const layout = useResponsiveLayout();
   const [mode, setMode] = useState("login"); // "login" | "register"
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -159,12 +161,15 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[
+            styles.scroll,
+            { paddingHorizontal: layout.pagePadding, paddingTop: layout.compact ? 24 : 44 },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* ── Logo ───────────────────────────────────── */}
-          <View style={styles.logoSection}>
+          <View style={[styles.logoSection, layout.compact && styles.logoSectionCompact]}>
             <View style={styles.logoMark}>
               <View style={styles.logoGlyphWrap}>
                 <MaterialCommunityIcons name="car" size={36} color="#434B5C" />
@@ -175,16 +180,16 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                 <View style={[styles.logoLine, { width: 18 }]} />
               </View>
             </View>
-            <Text style={styles.appName}>{T.appName}</Text>
-            <Text style={styles.appSub}>{T.appSub}</Text>
+            <Text style={[styles.appName, layout.compact && styles.appNameCompact]}>{T.appName}</Text>
+            <Text style={[styles.appSub, layout.compact && styles.appSubCompact]}>{T.appSub}</Text>
           </View>
 
           {/* ── Auth Card ───────────────────────────────── */}
-          <View style={styles.card}>
+          <View style={[styles.card, layout.cardMaxWidth && { maxWidth: layout.cardMaxWidth }]}>
             {/* Tab switcher */}
             <View style={styles.tabRow}>
               <Pressable
-                style={[styles.tab, mode === "login" && styles.tabActive]}
+                style={[styles.tab, layout.compact && styles.tabCompact, mode === "login" && styles.tabActive]}
                 onPress={() => switchMode("login")}
               >
                 <Text style={[styles.tabText, mode === "login" && styles.tabTextActive]}>
@@ -192,7 +197,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
                 </Text>
               </Pressable>
               <Pressable
-                style={[styles.tab, mode === "register" && styles.tabActive]}
+                style={[styles.tab, layout.compact && styles.tabCompact, mode === "register" && styles.tabActive]}
                 onPress={() => switchMode("register")}
               >
                 <Text style={[styles.tabText, mode === "register" && styles.tabTextActive]}>
@@ -355,7 +360,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
 
               {/* Submit */}
               <Pressable
-                style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed, loading && styles.submitBtnDisabled]}
+                style={({ pressed }) => [styles.submitBtn, layout.compact && styles.submitBtnCompact, pressed && styles.submitBtnPressed, loading && styles.submitBtnDisabled]}
                 onPress={handleSubmit}
                 disabled={loading}
               >
@@ -385,7 +390,7 @@ export default function LoginScreen({ onAuthSuccess, lang = "tr" }) {
               )}
 
               {/* Switch mode hint */}
-              <View style={styles.switchWrap}>
+              <View style={[styles.switchWrap, layout.compact && styles.switchWrapCompact]}>
                 <Text style={styles.switchText}>
                   {mode === "login" ? T.hintNoAccount : T.hintHaveAccount}
                 </Text>
@@ -552,13 +557,13 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 52,
     paddingBottom: 32,
+    width: "100%",
   },
 
   // Logo section
-  logoSection: { alignItems: "center", marginBottom: 36 },
+  logoSection: { alignItems: "center", marginBottom: 36, width: "100%" },
+  logoSectionCompact: { marginBottom: 24 },
   logoMark: {
     width: 90, height: 90, borderRadius: 26,
     backgroundColor: "#E8EDF3", borderWidth: 1, borderColor: "#D3DBE4",
@@ -571,12 +576,15 @@ const styles = StyleSheet.create({
   logoGlyphWrap: { width: 40, height: 32, alignItems: "center", justifyContent: "center" },
   logoLineStack: { alignItems: "center", gap: 3 },
   logoLine: { height: 3, borderRadius: 2, backgroundColor: "#4B5365" },
-  appName: { color: PALETTE.textPrimary, fontSize: 26, fontWeight: "800", letterSpacing: 0.3 },
-  appSub: { color: PALETTE.textSecondary, fontSize: 13, fontWeight: "600", marginTop: 4 },
+  appName: { color: PALETTE.textPrimary, fontSize: 26, fontWeight: "800", letterSpacing: 0.3, textAlign: "center" },
+  appNameCompact: { fontSize: 23 },
+  appSub: { color: PALETTE.textSecondary, fontSize: 13, fontWeight: "600", marginTop: 4, textAlign: "center" },
+  appSubCompact: { fontSize: 12 },
 
   // Card
   card: {
     width: "100%",
+    alignSelf: "stretch",
     backgroundColor: PALETTE.card,
     borderRadius: 22,
     borderWidth: 1,
@@ -599,6 +607,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
+  tabCompact: { paddingVertical: 12 },
   tabActive: {
     backgroundColor: PALETTE.card,
     borderBottomWidth: 2,
@@ -680,6 +689,7 @@ const styles = StyleSheet.create({
     shadowColor: PALETTE.accent, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 10, elevation: 6,
   },
+  submitBtnCompact: { height: 48 },
   submitBtnPressed: { backgroundColor: PALETTE.accentDark, transform: [{ scale: 0.98 }] },
   submitBtnDisabled: { opacity: 0.7 },
   submitBtnText: { color: "#fff", fontSize: 16, fontWeight: "800", letterSpacing: 0.3 },
@@ -701,7 +711,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     marginTop: 18,
+    flexWrap: "wrap",
   },
+  switchWrapCompact: { rowGap: 4 },
   switchText: { color: PALETTE.textSecondary, fontSize: 13 },
   switchLink: { color: PALETTE.accent, fontSize: 13, fontWeight: "700" },
 

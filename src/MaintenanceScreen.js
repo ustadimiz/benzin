@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { t as getT } from "./i18n";
 import { loadFuelState, loadMaintenanceState, saveFuelState, saveMaintenanceState, loadMaintenanceTypes } from "./userData";
+import { useResponsiveLayout } from "./responsive";
 
 const columnWidths = {
   date: 92,
@@ -57,6 +58,7 @@ const fmt = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFr
 
 export default function MaintenanceScreen({ lang = "tr", userId = "default", themeMode = "dark" }) {
   const isDark = themeMode === "dark";
+  const layout = useResponsiveLayout();
   const i = getT(lang);
   const MAINTENANCE_TYPES = i.maintenanceTypeList;
 
@@ -218,7 +220,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const styles = createStyles(isDark);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}>
       {/* Araç Seçici */}
       <ScrollView
         horizontal
@@ -321,7 +323,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>{editingId ? i.editMaintTitle : i.addMaintTitle}</Text>
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: layout.compact ? 420 : 500 }}>
               <Text style={styles.inputLabel}>{i.datePlaceholder}</Text>
               <Pressable
                 style={styles.input}
@@ -496,7 +498,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
 }
 
 const createStyles = (isDark) => StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingVertical: 12 },
+  container: { flex: 1, paddingHorizontal: 16, paddingVertical: 12, width: "100%", alignSelf: "center" },
 
   emptyRefreshWrap: { flex: 1 },
   emptyRefreshContent: { flexGrow: 1, justifyContent: "flex-start" },

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { t as getT } from "./i18n";
 import previewHistoryData from "../allprices-preview.json";
+import { useResponsiveLayout } from "./responsive";
 
 const HISTORY_FEED_URL = "https://raw.githubusercontent.com/ustadimiz/fuel-data/refs/heads/main/allprices.json";
 const FUEL_ACCENT = { benzin: "#F59E0B", motorin: "#0EA5E9", lpg: "#22C55E" };
@@ -115,6 +116,7 @@ function shrinkSeries(points, maxPoints = 28) {
 export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
   const i = getT(lang);
   const C = themeMode === "light" ? LIGHT : DARK;
+  const layout = useResponsiveLayout();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -244,7 +246,7 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 24 }}
+      contentContainerStyle={[styles.contentContainer, { paddingHorizontal: layout.pagePadding, maxWidth: layout.contentMaxWidth || undefined }]}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#D3ECFB" />}
     >
       <View style={[styles.headerCard, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
@@ -293,19 +295,19 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
         <>
           {stats && (
             <View style={styles.kpiRow}>
-              <View style={[styles.kpiBox, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
+              <View style={[styles.kpiBox, layout.kpiColumns === 1 && styles.kpiBoxFull, layout.kpiColumns === 2 && styles.kpiBoxHalf, layout.kpiColumns === 4 && styles.kpiBoxQuarter, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
                 <Text style={[styles.kpiLabel, { color: C.sub }]}>{i.statsLatest}</Text>
                 <Text style={[styles.kpiValue, { color: C.title }]}>{fmt.format(stats.latest)} ₺</Text>
               </View>
-              <View style={[styles.kpiBox, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
+              <View style={[styles.kpiBox, layout.kpiColumns === 1 && styles.kpiBoxFull, layout.kpiColumns === 2 && styles.kpiBoxHalf, layout.kpiColumns === 4 && styles.kpiBoxQuarter, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
                 <Text style={[styles.kpiLabel, { color: C.sub }]}>{i.statsMin}</Text>
                 <Text style={[styles.kpiValue, { color: C.title }]}>{fmt.format(stats.min)} ₺</Text>
               </View>
-              <View style={[styles.kpiBox, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
+              <View style={[styles.kpiBox, layout.kpiColumns === 1 && styles.kpiBoxFull, layout.kpiColumns === 2 && styles.kpiBoxHalf, layout.kpiColumns === 4 && styles.kpiBoxQuarter, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
                 <Text style={[styles.kpiLabel, { color: C.sub }]}>{i.statsMax}</Text>
                 <Text style={[styles.kpiValue, { color: C.title }]}>{fmt.format(stats.max)} ₺</Text>
               </View>
-              <View style={[styles.kpiBox, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
+              <View style={[styles.kpiBox, layout.kpiColumns === 1 && styles.kpiBoxFull, layout.kpiColumns === 2 && styles.kpiBoxHalf, layout.kpiColumns === 4 && styles.kpiBoxQuarter, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
                 <Text style={[styles.kpiLabel, { color: C.sub }]}>{i.statsChange}</Text>
                 <Text style={[styles.kpiValue, { color: stats.change >= 0 ? "#22C55E" : "#EF4444" }]}>{stats.change >= 0 ? "+" : ""}{fmt.format(stats.change)}%</Text>
               </View>
@@ -313,7 +315,7 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
           )}
 
           <View
-            style={[styles.chartCard, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}
+            style={[styles.chartCard, { height: layout.chartHeight, backgroundColor: C.chartBg, borderColor: C.chartBorder }]}
             onLayout={(e) => setChartW(e.nativeEvent.layout.width - 24)}
           >
             <View style={[styles.gridLine, { top: 20, backgroundColor: C.grid }]} />
@@ -418,7 +420,7 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
               value={citySearch}
               onChangeText={setCitySearch}
             />
-            <ScrollView style={{ maxHeight: 340 }}>
+            <ScrollView style={{ maxHeight: layout.compact ? 280 : 340 }}>
               {filteredCities.map((city) => (
                 <Pressable
                   key={city}
@@ -441,7 +443,8 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr" }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 2 },
+  container: { flex: 1, paddingTop: 2, width: "100%" },
+  contentContainer: { paddingBottom: 24, width: "100%", alignSelf: "center" },
   headerCard: {
     borderWidth: 1,
     borderRadius: 16,
@@ -485,12 +488,15 @@ const styles = StyleSheet.create({
 
   kpiRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 },
   kpiBox: {
-    width: "48.8%",
+    minWidth: 0,
     borderWidth: 1,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 10,
   },
+  kpiBoxFull: { width: "100%" },
+  kpiBoxHalf: { width: "48.8%" },
+  kpiBoxQuarter: { width: "23.6%" },
   kpiLabel: { fontSize: 11, fontWeight: "700" },
   kpiValue: { marginTop: 4, fontSize: 16, fontWeight: "800" },
 

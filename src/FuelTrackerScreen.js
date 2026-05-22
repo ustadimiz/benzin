@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { t as getT } from "./i18n";
 import { loadFuelState, saveFuelState } from "./userData";
+import { useResponsiveLayout } from "./responsive";
 
 const fuelAccent = { benzin: "#F59E0B", motorin: "#0EA5E9", lpg: "#22C55E" };
 const fmt = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -142,6 +143,7 @@ function calcCrossEntryStats(entries, vehicleId) {
 // ─────────────────────────────────────────────────────────────────
 export default function FuelTrackerScreen({ lang = "tr", userId = "default", themeMode = "dark" }) {
   const i = getT(lang);
+  const layout = useResponsiveLayout();
   const isDark = themeMode === "dark";
   const fuelLabels = { benzin: i.benzin, motorin: i.motorin, lpg: i.lpg };
   const { width: windowWidth } = useWindowDimensions();
@@ -346,7 +348,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const styles = createStyles(isDark);
 
   return (
-    <View style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop]}>
+    <View style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}>
 
       {/* Araç Seçici */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.vehicleRow} contentContainerStyle={styles.vehicleRowContent}>
@@ -392,7 +394,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
         <>
           {/* KPI kartları */}
           {(vehicleEntries.length > 0 || crossStats) && (
-            <View style={styles.statsRow}>
+            <View style={[styles.statsRow, layout.compact && styles.statsRowStack]}>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>{i.statTotalCost}</Text>
                 <Text style={styles.statValue}>{fmt.format(totals.totalCost)} ₺</Text>
@@ -409,7 +411,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
           )}
 
           {crossStats && (
-            <View style={[styles.statsRow, styles.statsRowSecondary]}>
+            <View style={[styles.statsRow, styles.statsRowSecondary, layout.compact && styles.statsRowStack]}>
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>{i.statEfficiency}</Text>
                 <Text style={styles.statValue}>{fmt.format(crossStats.avgLitrePer100km)} L</Text>
@@ -691,6 +693,7 @@ const createStyles = (isDark) => StyleSheet.create({
 
   // İstatistik kutuları
   statsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  statsRowStack: { flexDirection: "column" },
   statBox: {
     flex: 1, backgroundColor: isDark ? "#102B3A" : "#FFFFFF", borderRadius: 16, paddingHorizontal: 10, paddingVertical: 12,
     alignItems: "center", borderWidth: 1, borderColor: isDark ? "#244D62" : "#C7D9E5"

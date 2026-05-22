@@ -3,6 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { t as getT } from "./i18n";
 import previewPricesData from "../allprices-preview.json";
+import { useResponsiveLayout } from "./responsive";
 
 const STORAGE_SELECTED_CITY = "@fiyatlar_secilen_il";
 const STORAGE_FAVORITE_STATIONS = "@fiyatlar_favori_istasyonlar";
@@ -375,6 +376,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
   const i = getT(lang);
   const fuelLabels = { benzin: i.benzin, motorin: i.motorin, lpg: i.lpg };
   const { width: windowWidth } = useWindowDimensions();
+  const layout = useResponsiveLayout();
 
   // Responsive: determine number of columns
   const numColumns = windowWidth >= 1200 ? 3 : windowWidth >= 768 ? 2 : 1;
@@ -524,8 +526,8 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
   const flatListKey = `cols-${numColumns}`;
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.filtersRow, numColumns > 1 && styles.filtersRowWide]}>
+    <View style={[styles.container, { paddingHorizontal: layout.pagePadding }, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}>
+      <View style={[styles.filtersRow, layout.stackChips && styles.filtersRowStack, numColumns > 1 && styles.filtersRowWide]}>
         {["benzin", "motorin", "lpg"].map((fuel) => {
           const active = selectedFuel === fuel;
           return (
@@ -534,6 +536,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
               onPress={() => setSelectedFuel(fuel)}
               style={[
                 styles.chip,
+                layout.stackChips && styles.chipStack,
                 { backgroundColor: C.chip, borderColor: C.chipBorder },
                 active && { backgroundColor: fuelAccent[fuel], borderColor: fuelAccent[fuel] }
               ]}
@@ -589,7 +592,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
 
       <Modal visible={showCityModal} transparent animationType="slide" onRequestClose={() => setShowCityModal(false)}>
         <View style={styles.modalOverlay}>
-            <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }, numColumns > 1 && styles.modalBoxWide]}>
+            <View style={[styles.modalBox, { backgroundColor: C.modalBg, borderColor: C.modalBorder }, layout.modalMaxWidth && { maxWidth: layout.modalMaxWidth, width: "94%", alignSelf: "center" }, numColumns > 1 && styles.modalBoxWide]}>
               <Text style={[styles.modalTitle, { color: C.modalTitle }]}>{i.selectCity}</Text>
               <TextInput
                 style={[styles.searchInput, { backgroundColor: C.searchInput, borderColor: C.searchInputBorder, color: C.searchInputText }]}
@@ -652,8 +655,9 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 2, width: "100%" },
+  container: { flex: 1, paddingTop: 2, width: "100%", alignSelf: "center" },
   filtersRow: { marginBottom: 12, flexDirection: "row", gap: 8 },
+  filtersRowStack: { flexWrap: "wrap" },
   chip: {
     flex: 1,
     borderRadius: 12,
@@ -661,6 +665,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
   },
+  chipStack: { flexBasis: "31%", minWidth: 92, flexGrow: 0 },
   chipText: { fontWeight: "700", fontSize: 13 },
   chipTextActive: { color: "#0A2230" },
 
@@ -668,7 +673,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     padding: 12,
-    marginBottom: 10
+    marginBottom: 10,
+    width: "100%",
   },
   cityLabel: { fontSize: 12, fontWeight: "700", marginBottom: 8 },
   cityPicker: {
@@ -737,6 +743,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     maxHeight: "65%",
     flexDirection: "column",
+    width: "100%",
   },
   modalTitle: { fontSize: 18, fontWeight: "800", marginBottom: 10 },
   cityList: { flexGrow: 0, flexShrink: 1 },
