@@ -549,7 +549,7 @@ export default function PricesScreen({ themeMode = "dark", lang = "tr" }) {
       </View>
 
       <View style={[styles.cityCard, { backgroundColor: C.cityCard, borderColor: C.cityCardBorder }, numColumns > 1 && styles.cityCardWide]}>
-        <View style={numColumns > 1 ? styles.cityCardInnerRow : undefined}>
+        <View>
           <Text style={[styles.cityLabel, { color: C.cityLabel }]}>{i.citySelection}</Text>
           <Pressable style={[styles.cityPicker, { backgroundColor: C.cityPicker, borderColor: C.cityPickerBorder }, numColumns > 1 && styles.cityPickerWide]} onPress={() => setShowCityModal(true)}>
             <Text style={[styles.cityPickerText, { color: C.cityPickerText }]}>
@@ -775,9 +775,8 @@ const styles = StyleSheet.create({
   closeModalText: { color: "#F2FAFF", fontWeight: "800", fontSize: 14 },
 
   // Responsive styles
-  filtersRowWide: { maxWidth: 500 },
-  cityCardWide: { maxWidth: 700 },
-  cityCardInnerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  filtersRowWide: { width: "100%", maxWidth: "100%" },
+  cityCardWide: { width: "100%", maxWidth: "100%" },
   cityPickerWide: { flex: 1 },
   columnWrapper: { gap: 10, justifyContent: "flex-start" },
   modalBoxWide: {
