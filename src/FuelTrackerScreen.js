@@ -205,9 +205,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasScrolledMain, setHasScrolledMain] = useState(false);
-  const [isTableInteracting, setIsTableInteracting] = useState(false);
   const tableTouchStartRef = useRef({ x: 0, y: 0 });
-  const tableTouchLockedRef = useRef(false);
 
   // Modal görünürlükleri
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -268,27 +266,16 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
     const point = getTouchPoint(event.nativeEvent);
     if (!point) return;
     tableTouchStartRef.current = point;
-    tableTouchLockedRef.current = false;
-    setIsTableInteracting(false);
   };
 
-  const handleTableTouchMove = (event) => {
-    if (tableTouchLockedRef.current) return;
+  const shouldCaptureHorizontalMove = (event) => {
     const point = getTouchPoint(event.nativeEvent);
-    if (!point) return;
+    if (!point) return false;
     const dx = Math.abs(point.x - tableTouchStartRef.current.x);
     const dy = Math.abs(point.y - tableTouchStartRef.current.y);
-    if (dx < 7 && dy < 7) return;
-
-    tableTouchLockedRef.current = true;
-    // Horizontal gesture: allow grid scroll, pause parent vertical scroll.
-    // Vertical gesture: keep parent vertical scroll enabled.
-    setIsTableInteracting(dx > dy);
-  };
-
-  const handleTableTouchEnd = () => {
-    tableTouchLockedRef.current = false;
-    setIsTableInteracting(false);
+    if (dx < 8 && dy < 8) return false;
+    // Capture only horizontal intent. Vertical drags keep page scroll native.
+    return dx > dy;
   };
 
   // ── Araç ekle ───────────────────────────────────────────────────
@@ -480,7 +467,6 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
         style={[styles.container, isWide && styles.containerWide, isDesktop && styles.containerDesktop, layout.contentMaxWidth && { maxWidth: layout.contentMaxWidth }]}
         contentContainerStyle={[styles.containerContent, { flexGrow: 1 }]}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={!isTableInteracting}
         overScrollMode="always"
         alwaysBounceVertical
         bounces
@@ -582,11 +568,8 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
               directionalLockEnabled
               showsHorizontalScrollIndicator
               onTouchStart={handleTableTouchStart}
-              onTouchMove={handleTableTouchMove}
-              onTouchEnd={handleTableTouchEnd}
-              onTouchCancel={handleTableTouchEnd}
-              onScrollEndDrag={handleTableTouchEnd}
-              onMomentumScrollEnd={handleTableTouchEnd}
+              onStartShouldSetResponderCapture={() => false}
+              onMoveShouldSetResponderCapture={shouldCaptureHorizontalMove}
               contentContainerStyle={styles.tableScrollContent}
             >
               <View style={[styles.tableInner, isWide && styles.tableInnerWide, { minWidth: tableMinWidth }]}>
