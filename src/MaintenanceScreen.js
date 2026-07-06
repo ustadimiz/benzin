@@ -91,6 +91,13 @@ function parseUserDateInput(value) {
   return null;
 }
 
+function parseNumber(value) {
+  if (value === null || value === undefined) return NaN;
+  const normalized = String(value).replace(/\s/g, "").replace(/,/g, ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
 const emptyEntry = () => ({
   id: Date.now().toString(),
   date: formatDateTR(new Date()),
@@ -288,6 +295,30 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
     ? entries.filter((e) => e.vehicleId === selectedVehicle.id).sort((a, b) => parseFloat(b.km) - parseFloat(a.km))
     : [];
 
+  const maintenanceSummary = useMemo(() => {
+    const count = vehicleEntries.length;
+    const totalCost = vehicleEntries.reduce((sum, entry) => {
+      const value = parseNumber(entry.cost);
+      return Number.isFinite(value) ? sum + value : sum;
+    }, 0);
+    const avgCost = count > 0 ? totalCost / count : 0;
+
+    const latestByDate = vehicleEntries.reduce((latest, entry) => {
+      const currentDate = parseEntryDate(entry.date);
+      if (!latest) return entry;
+      const latestDate = parseEntryDate(latest.date);
+      return currentDate.getTime() > latestDate.getTime() ? entry : latest;
+    }, null);
+
+    return {
+      count,
+      totalCost,
+      avgCost,
+      latestDateText: latestByDate?.date || "-",
+      latestKmText: latestByDate?.km ? `${latestByDate.km} km` : "-",
+    };
+  }, [vehicleEntries]);
+
   const deleteVehicle = async () => {
     const performDeleteVehicle = async () => {
       try {
@@ -417,98 +448,120 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                 <Text style={styles.emptyStateText}>{i.noMaintEntry}</Text>
               </View>
             ) : (
-              <View style={styles.tableCard}>
-                <ScrollView
-                  horizontal={!useFluidColumns}
-                  showsHorizontalScrollIndicator={!useFluidColumns}
-                  nestedScrollEnabled
-                  directionalLockEnabled
-                  onTouchStart={handleTableTouchStart}
-                  onStartShouldSetResponderCapture={() => false}
-                  onMoveShouldSetResponderCapture={shouldCaptureHorizontalMove}
-                  contentContainerStyle={styles.tableScrollContent}
-                  style={{ flex: 1 }}
-                >
-                  <View
-                    style={[
-                      styles.tableInner,
-                      useFluidColumns && styles.tableInnerWide,
-                      { minWidth: useFluidColumns ? 0 : tableMinWidth },
-                    ]}
-                  >
-                  {/* Bakım Listesi Header - Sticky */}
-                  <View style={styles.gridHeader}>
-                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.date]}>{i.colDate}</Text>
-                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.km]}>{i.colKm}</Text>
-                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.types]}>{i.colMaintTypes}</Text>
-                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.cost, { textAlign: "center" }]}>{i.colCost}</Text>
-                    <Text numberOfLines={1} style={[styles.gridHeaderCell, col.actions, { textAlign: "center" }]}></Text>
+              <>
+                <View style={[styles.statsRow, !isWide && styles.statsRowStack]}>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statLabel}>{i.maintStatCount}</Text>
+                    <Text style={styles.statValue}>{maintenanceSummary.count}</Text>
                   </View>
-
-                  {/* Tablo Verileri */}
-                  <FlatList
-                    data={vehicleEntries}
-                    keyExtractor={(item) => item.id}
-                    scrollEnabled
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 20 }}
-                    renderItem={({ item, index }) => (
-                      <View style={[styles.gridRow, index % 2 === 1 && styles.gridRowAlt]}>
-                    <Text numberOfLines={1} style={[styles.gridCell, col.date]}>{item.date}</Text>
-                    <Text numberOfLines={1} style={[styles.gridCell, col.km]}>{item.km}</Text>
-                    <Pressable
-                      style={[styles.maintenanceTypesCell, col.types]}
-                      onHoverIn={() => {
-                        if (canUseHoverPreview) setHoveredMaintenanceTypesRowId(item.id);
-                      }}
-                      onHoverOut={() => {
-                        if (canUseHoverPreview) {
-                          setHoveredMaintenanceTypesRowId((current) => (current === item.id ? null : current));
-                        }
-                      }}
-                    >
-                      {(() => {
-                        const types = Array.isArray(item.maintenanceTypes) ? item.maintenanceTypes : [];
-                        const usePreviewCollapse = canUseHoverPreview;
-                        const isHovered = usePreviewCollapse && hoveredMaintenanceTypesRowId === item.id;
-                        const previewCount = 2;
-                        const visibleTypes = usePreviewCollapse
-                          ? (isHovered ? types : types.slice(0, previewCount))
-                          : types;
-
-                        return (
-                          <>
-                            {visibleTypes.map((type) => (
-                              <Text
-                                key={`${item.id}-${type}`}
-                                numberOfLines={usePreviewCollapse && !isHovered ? 1 : undefined}
-                                style={styles.maintenanceTypeLine}
-                              >
-                                • {type}
-                              </Text>
-                            ))}
-                            {usePreviewCollapse && !isHovered && types.length > previewCount ? (
-                              <Text style={styles.maintenanceTypeMore}>+{types.length - previewCount}</Text>
-                            ) : null}
-                          </>
-                        );
-                      })()}
-                    </Pressable>
-                    <Text numberOfLines={1} style={[styles.gridCell, col.cost]}>{item.cost} ₺</Text>
-                    <View style={[styles.rowActions, col.actions]}>
-                      <Pressable style={styles.rowIconBtn} onPress={() => startEdit(item)}>
-                        <Text style={styles.rowEditIcon}>✎</Text>
-                      </Pressable>
-                      <Pressable style={styles.rowIconBtn} onPress={() => deleteEntry(item.id)}>
-                        <Text style={styles.rowDeleteIcon}>✕</Text>
-                      </Pressable>
-                    </View>
-                      </View>
-                    )}
-                  />
+                  <View style={styles.statBox}>
+                    <Text style={styles.statLabel}>{i.maintStatTotalCost}</Text>
+                    <Text style={styles.statValue}>{fmt.format(maintenanceSummary.totalCost)} ₺</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statLabel}>{i.maintStatAvgCost}</Text>
+                    <Text style={styles.statValue}>{fmt.format(maintenanceSummary.avgCost)} ₺</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statLabel}>{i.maintStatLastMaint}</Text>
+                    <Text style={styles.statValue}>{maintenanceSummary.latestDateText}</Text>
+                    <Text style={styles.statSubValue}>{maintenanceSummary.latestKmText}</Text>
+                  </View>
                 </View>
-              </ScrollView>
-              </View>
+
+                <View style={styles.tableCard}>
+                  <ScrollView
+                    horizontal={!useFluidColumns}
+                    showsHorizontalScrollIndicator={!useFluidColumns}
+                    nestedScrollEnabled
+                    directionalLockEnabled
+                    onTouchStart={handleTableTouchStart}
+                    onStartShouldSetResponderCapture={() => false}
+                    onMoveShouldSetResponderCapture={shouldCaptureHorizontalMove}
+                    contentContainerStyle={styles.tableScrollContent}
+                    style={{ flex: 1 }}
+                  >
+                    <View
+                      style={[
+                        styles.tableInner,
+                        useFluidColumns && styles.tableInnerWide,
+                        { minWidth: useFluidColumns ? 0 : tableMinWidth },
+                      ]}
+                    >
+                    {/* Bakım Listesi Header - Sticky */}
+                    <View style={styles.gridHeader}>
+                      <Text numberOfLines={1} style={[styles.gridHeaderCell, col.date]}>{i.colDate}</Text>
+                      <Text numberOfLines={1} style={[styles.gridHeaderCell, col.km]}>{i.colKm}</Text>
+                      <Text numberOfLines={1} style={[styles.gridHeaderCell, col.types]}>{i.colMaintTypes}</Text>
+                      <Text numberOfLines={1} style={[styles.gridHeaderCell, col.cost, { textAlign: "center" }]}>{i.colCost}</Text>
+                      <Text numberOfLines={1} style={[styles.gridHeaderCell, col.actions, { textAlign: "center" }]}></Text>
+                    </View>
+
+                    {/* Tablo Verileri */}
+                    <FlatList
+                      data={vehicleEntries}
+                      keyExtractor={(item) => item.id}
+                      scrollEnabled
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{ paddingBottom: 20 }}
+                      renderItem={({ item, index }) => (
+                        <View style={[styles.gridRow, index % 2 === 1 && styles.gridRowAlt]}>
+                      <Text numberOfLines={1} style={[styles.gridCell, col.date]}>{item.date}</Text>
+                      <Text numberOfLines={1} style={[styles.gridCell, col.km]}>{item.km}</Text>
+                      <Pressable
+                        style={[styles.maintenanceTypesCell, col.types]}
+                        onHoverIn={() => {
+                          if (canUseHoverPreview) setHoveredMaintenanceTypesRowId(item.id);
+                        }}
+                        onHoverOut={() => {
+                          if (canUseHoverPreview) {
+                            setHoveredMaintenanceTypesRowId((current) => (current === item.id ? null : current));
+                          }
+                        }}
+                      >
+                        {(() => {
+                          const types = Array.isArray(item.maintenanceTypes) ? item.maintenanceTypes : [];
+                          const usePreviewCollapse = canUseHoverPreview;
+                          const isHovered = usePreviewCollapse && hoveredMaintenanceTypesRowId === item.id;
+                          const previewCount = 2;
+                          const visibleTypes = usePreviewCollapse
+                            ? (isHovered ? types : types.slice(0, previewCount))
+                            : types;
+
+                          return (
+                            <>
+                              {visibleTypes.map((type) => (
+                                <Text
+                                  key={`${item.id}-${type}`}
+                                  numberOfLines={usePreviewCollapse && !isHovered ? 1 : undefined}
+                                  style={styles.maintenanceTypeLine}
+                                >
+                                  • {type}
+                                </Text>
+                              ))}
+                              {usePreviewCollapse && !isHovered && types.length > previewCount ? (
+                                <Text style={styles.maintenanceTypeMore}>+{types.length - previewCount}</Text>
+                              ) : null}
+                            </>
+                          );
+                        })()}
+                      </Pressable>
+                      <Text numberOfLines={1} style={[styles.gridCell, col.cost]}>{item.cost} ₺</Text>
+                      <View style={[styles.rowActions, col.actions]}>
+                        <Pressable style={styles.rowIconBtn} onPress={() => startEdit(item)}>
+                          <Text style={styles.rowEditIcon}>✎</Text>
+                        </Pressable>
+                        <Pressable style={styles.rowIconBtn} onPress={() => deleteEntry(item.id)}>
+                          <Text style={styles.rowDeleteIcon}>✕</Text>
+                        </Pressable>
+                      </View>
+                        </View>
+                      )}
+                    />
+                  </View>
+                </ScrollView>
+                </View>
+              </>
             )}
 
             {/* FAB */}
@@ -790,6 +843,22 @@ const createStyles = (isDark) => StyleSheet.create({
   vehicleChipText: { color: isDark ? "#B2CFDF" : "#47657A", fontWeight: "600", fontSize: 13 },
   vehicleChipTextActive: { color: isDark ? "#D4ECFA" : "#12384D" },
   vehiclePlate: { color: isDark ? "#7297AB" : "#5A7588", fontSize: 11, marginTop: 1 },
+
+  statsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  statsRowStack: { flexDirection: "column" },
+  statBox: {
+    flex: 1,
+    backgroundColor: isDark ? "#102B3A" : "#FFFFFF",
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: isDark ? "#244D62" : "#C7D9E5",
+  },
+  statLabel: { color: isDark ? "#9CBFD2" : "#5A7588", fontSize: 10, fontWeight: "600", textAlign: "center" },
+  statValue: { color: isDark ? "#F0F9FF" : "#12384D", fontSize: 14, fontWeight: "800", marginTop: 5, textAlign: "center" },
+  statSubValue: { color: isDark ? "#9CBFD2" : "#5A7588", fontSize: 11, fontWeight: "600", marginTop: 2, textAlign: "center" },
 
   tableCard: {
     backgroundColor: isDark ? "#0C1F2C" : "#FFFFFF",
