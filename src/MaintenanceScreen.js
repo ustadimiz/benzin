@@ -540,6 +540,16 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                     const d = parseEntryDate(entryForm.date);
                     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
                   })()}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === "function") {
+                      e.target.showPicker();
+                    }
+                  }}
+                  onFocus={(e) => {
+                    if (typeof e.target.showPicker === "function") {
+                      e.target.showPicker();
+                    }
+                  }}
                   onChange={(e) => {
                     const parsed = parseUserDateInput(e.target.value);
                     if (parsed) {
