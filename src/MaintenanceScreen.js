@@ -449,6 +449,9 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
               </View>
             ) : (
               <>
+                <View style={styles.summaryHeader}>
+                  <Text style={styles.summaryTitle}>{i.maintSummaryTitle}</Text>
+                </View>
                 <View style={[styles.statsRow, !isWide && styles.statsRowStack]}>
                   <View style={styles.statBox}>
                     <Text style={styles.statLabel}>{i.maintStatCount}</Text>
@@ -843,6 +846,9 @@ const createStyles = (isDark) => StyleSheet.create({
   vehicleChipText: { color: isDark ? "#B2CFDF" : "#47657A", fontWeight: "600", fontSize: 13 },
   vehicleChipTextActive: { color: isDark ? "#D4ECFA" : "#12384D" },
   vehiclePlate: { color: isDark ? "#7297AB" : "#5A7588", fontSize: 11, marginTop: 1 },
+
+  summaryHeader: { marginBottom: 8, marginTop: 2 },
+  summaryTitle: { color: isDark ? "#DDF3FF" : "#12384D", fontSize: 16, fontWeight: "800" },
 
   statsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   statsRowStack: { flexDirection: "column" },

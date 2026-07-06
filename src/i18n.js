@@ -103,6 +103,11 @@ const translations = {
     colMaintTypes: "Bakım Türleri",
     colCost: "Tutar",
     maintRequired: "KM, Tutar ve en az bir bakım türü zorunludur.",
+    maintSummaryTitle: "Bakım Özeti",
+    maintStatCount: "Toplam Bakım",
+    maintStatTotalCost: "Toplam Maliyet",
+    maintStatAvgCost: "Ort. Bakım Maliyeti",
+    maintStatLastMaint: "Son Bakım",
 
     // Prices
     citySelection: "İl Seçimi",
@@ -250,6 +255,11 @@ const translations = {
     colMaintTypes: "Maint. Types",
     colCost: "Amount",
     maintRequired: "KM, Amount and at least one maintenance type are required.",
+    maintSummaryTitle: "Maintenance Summary",
+    maintStatCount: "Total Maintenance",
+    maintStatTotalCost: "Total Cost",
+    maintStatAvgCost: "Avg. Maintenance Cost",
+    maintStatLastMaint: "Last Maintenance",
 
     // Prices
     citySelection: "City Selection",
