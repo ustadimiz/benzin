@@ -1,5 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -142,7 +142,16 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [maintenanceTypeOptions, setMaintenanceTypeOptions] = useState([]);
   const [manualMaintenanceInput, setManualMaintenanceInput] = useState("");
+  const [maintenanceSearchQuery, setMaintenanceSearchQuery] = useState("");
   const tableTouchStartRef = useRef({ x: 0, y: 0 });
+
+  const filteredMaintenanceTypeOptions = useMemo(() => {
+    const query = maintenanceSearchQuery.trim().toLocaleLowerCase(lang === "tr" ? "tr-TR" : "en-US");
+    if (!query) return maintenanceTypeOptions;
+    return maintenanceTypeOptions.filter((type) =>
+      type.toLocaleLowerCase(lang === "tr" ? "tr-TR" : "en-US").includes(query)
+    );
+  }, [maintenanceSearchQuery, maintenanceTypeOptions, lang]);
 
   const loadData = async () => {
     try {
@@ -232,8 +241,14 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
     setEditingId(null);
     setShowDatePicker(false);
     setShowMaintenanceModal(false);
+    setMaintenanceSearchQuery("");
     setEntryForm(emptyEntry());
     setManualMaintenanceInput("");
+  };
+
+  const closeMaintenanceModal = () => {
+    setShowMaintenanceModal(false);
+    setMaintenanceSearchQuery("");
   };
 
   const deleteEntry = async (id) => {
@@ -542,7 +557,13 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
               />
 
               <Text style={styles.inputLabel}>{i.maintenanceTypesLabel}</Text>
-              <Pressable onPress={() => setShowMaintenanceModal(true)} style={styles.dropdownBtn}>
+              <Pressable
+                onPress={() => {
+                  setMaintenanceSearchQuery("");
+                  setShowMaintenanceModal(true);
+                }}
+                style={styles.dropdownBtn}
+              >
                 <Text style={styles.dropdownBtnText}>
                   {entryForm.maintenanceTypes.length > 0
                     ? `${entryForm.maintenanceTypes.length} ${i.selectedSuffix}`
@@ -588,8 +609,8 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
       </Modal>
 
       {/* ── Modal: Bakım Türü Seç ─────────────────────────────── */}
-      <Modal visible={showMaintenanceModal} transparent animationType="slide" onRequestClose={() => setShowMaintenanceModal(false)}>
-        <TouchableWithoutFeedback onPress={() => setShowMaintenanceModal(false)}>
+      <Modal visible={showMaintenanceModal} transparent animationType="slide" onRequestClose={closeMaintenanceModal}>
+        <TouchableWithoutFeedback onPress={closeMaintenanceModal}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <View style={[styles.modalBox, styles.modalBoxConstrained, isWide ? { width: wideModalWidth, borderRadius: 24 } : styles.modalBoxMobile, { flexDirection: "column", height: "90%" }]}>
@@ -646,12 +667,26 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
             {/* DB Türleri Listesi */}
             <View style={{ flex: 1, paddingTop: 12 }}>
               <Text style={[styles.inputLabel, { marginBottom: 8 }]}>Önceden tanımlanmış:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={i.searchMaintTypePlaceholder}
+                placeholderTextColor="#4A7A94"
+                value={maintenanceSearchQuery}
+                onChangeText={setMaintenanceSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
               <FlatList
-                data={maintenanceTypeOptions}
+                data={filteredMaintenanceTypeOptions}
                 keyExtractor={(item) => item}
                 showsVerticalScrollIndicator={true}
                 style={{ flex: 1 }}
                 contentContainerStyle={{ paddingBottom: 10 }}
+                ListEmptyComponent={
+                  <View style={styles.emptyStateInline}>
+                    <Text style={styles.emptyStateText}>{i.noMaintTypeSearchResult}</Text>
+                  </View>
+                }
                 renderItem={({ item: type }) => {
                   const isSelected = entryForm.maintenanceTypes.includes(type);
                   return (
@@ -671,7 +706,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
 
             <Pressable
               style={styles.maintenanceModalDoneBtn}
-              onPress={() => setShowMaintenanceModal(false)}
+              onPress={closeMaintenanceModal}
             >
               <Text style={styles.modalBtnSaveText}>{i.ok}</Text>
             </Pressable>
