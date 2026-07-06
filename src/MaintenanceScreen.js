@@ -462,9 +462,12 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                     >
                       {(() => {
                         const types = Array.isArray(item.maintenanceTypes) ? item.maintenanceTypes : [];
-                        const isHovered = Platform.OS === "web" && hoveredMaintenanceTypesRowId === item.id;
+                        const usePreviewCollapse = Platform.OS === "web" && windowWidth >= 1200;
+                        const isHovered = usePreviewCollapse && hoveredMaintenanceTypesRowId === item.id;
                         const previewCount = 2;
-                        const visibleTypes = isHovered ? types : types.slice(0, previewCount);
+                        const visibleTypes = usePreviewCollapse
+                          ? (isHovered ? types : types.slice(0, previewCount))
+                          : types;
 
                         return (
                           <>
@@ -477,7 +480,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                                 • {type}
                               </Text>
                             ))}
-                            {!isHovered && types.length > previewCount ? (
+                            {usePreviewCollapse && !isHovered && types.length > previewCount ? (
                               <Text style={styles.maintenanceTypeMore}>+{types.length - previewCount}</Text>
                             ) : null}
                           </>
