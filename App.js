@@ -8,6 +8,7 @@ import FuelTrackerScreen from "./src/FuelTrackerScreen";
 import PricesScreen from "./src/PricesScreen";
 import MaintenanceScreen from "./src/MaintenanceScreen";
 import StatisticsScreen from "./src/StatisticsScreen";
+import AnalysisScreen from "./src/AnalysisScreen";
 import LoginScreen from "./src/LoginScreen";
 import { restoreSession, logout as authLogout, softDeleteAccount as authSoftDeleteAccount } from "./src/auth";
 import { t as getT, LANGUAGES } from "./src/i18n";
@@ -279,6 +280,7 @@ export default function App() {
               { key: "tracker", icon: "📊", label: i.tabFuel },
               { key: "maintenance", icon: "🔧", label: i.tabMaintenance },
               { key: "stats", icon: "📈", label: i.tabStats },
+              { key: "analysis", icon: "🧮", label: i.tabAnalysis },
             ].map((tab) => (
               <Pressable
                 key={tab.key}
@@ -308,6 +310,7 @@ export default function App() {
             {activeTab === "tracker" && <FuelTrackerScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
             {activeTab === "maintenance" && <MaintenanceScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
             {activeTab === "stats" && <StatisticsScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} />}
+            {activeTab === "analysis" && <AnalysisScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
           </ScrollView>
         </View>
       ) : (
@@ -378,6 +381,13 @@ export default function App() {
             <Text style={styles.tabIcon}>📈</Text>
             <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "stats" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabStats}</Text>
           </Pressable>
+          <Pressable
+            onPress={() => setActiveTab("analysis")}
+            style={[styles.tabBtn, isTablet && styles.tabBtnTablet, activeTab === "analysis" && { backgroundColor: theme.tabActiveBg }]}
+          >
+            <Text style={styles.tabIcon}>🧮</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: theme.tabLabel }, activeTab === "analysis" && { color: theme.tabLabelActive }, isTablet && styles.tabLabelTablet]}>{i.tabAnalysis}</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -386,6 +396,7 @@ export default function App() {
         {activeTab === "tracker" && <FuelTrackerScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
         {activeTab === "maintenance" && <MaintenanceScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
         {activeTab === "stats" && <StatisticsScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} />}
+        {activeTab === "analysis" && <AnalysisScreen themeMode={isDarkTheme ? "dark" : "light"} lang={language} userId={user.id} />}
       </View>
         </>
       )}
