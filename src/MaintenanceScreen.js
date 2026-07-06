@@ -154,6 +154,13 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
     );
   }, [maintenanceSearchQuery, maintenanceTypeOptions, lang]);
 
+  const canUseHoverPreview = useMemo(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return false;
+    }
+    return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  }, [windowWidth]);
+
   const loadData = async () => {
     try {
       const [fuelResult, maintenanceResult] = await Promise.allSettled([
@@ -452,17 +459,17 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                     <Pressable
                       style={[styles.maintenanceTypesCell, col.types]}
                       onHoverIn={() => {
-                        if (Platform.OS === "web") setHoveredMaintenanceTypesRowId(item.id);
+                        if (canUseHoverPreview) setHoveredMaintenanceTypesRowId(item.id);
                       }}
                       onHoverOut={() => {
-                        if (Platform.OS === "web") {
+                        if (canUseHoverPreview) {
                           setHoveredMaintenanceTypesRowId((current) => (current === item.id ? null : current));
                         }
                       }}
                     >
                       {(() => {
                         const types = Array.isArray(item.maintenanceTypes) ? item.maintenanceTypes : [];
-                        const usePreviewCollapse = Platform.OS === "web" && windowWidth >= 1200;
+                        const usePreviewCollapse = canUseHoverPreview;
                         const isHovered = usePreviewCollapse && hoveredMaintenanceTypesRowId === item.id;
                         const previewCount = 2;
                         const visibleTypes = usePreviewCollapse
@@ -474,7 +481,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                             {visibleTypes.map((type) => (
                               <Text
                                 key={`${item.id}-${type}`}
-                                numberOfLines={isHovered ? undefined : 1}
+                                numberOfLines={usePreviewCollapse && !isHovered ? 1 : undefined}
                                 style={styles.maintenanceTypeLine}
                               >
                                 • {type}
