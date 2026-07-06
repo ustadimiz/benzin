@@ -143,6 +143,7 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   const [maintenanceTypeOptions, setMaintenanceTypeOptions] = useState([]);
   const [manualMaintenanceInput, setManualMaintenanceInput] = useState("");
   const [maintenanceSearchQuery, setMaintenanceSearchQuery] = useState("");
+  const [hoveredMaintenanceTypesRowId, setHoveredMaintenanceTypesRowId] = useState(null);
   const tableTouchStartRef = useRef({ x: 0, y: 0 });
 
   const filteredMaintenanceTypeOptions = useMemo(() => {
@@ -448,9 +449,41 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
                       <View style={[styles.gridRow, index % 2 === 1 && styles.gridRowAlt]}>
                     <Text numberOfLines={1} style={[styles.gridCell, col.date]}>{item.date}</Text>
                     <Text numberOfLines={1} style={[styles.gridCell, col.km]}>{item.km}</Text>
-                    <Text numberOfLines={1} style={[styles.gridCell, col.types, { fontSize: 11 }]}>
-                      {item.maintenanceTypes.join(", ")}
-                    </Text>
+                    <Pressable
+                      style={[styles.maintenanceTypesCell, col.types]}
+                      onHoverIn={() => {
+                        if (Platform.OS === "web") setHoveredMaintenanceTypesRowId(item.id);
+                      }}
+                      onHoverOut={() => {
+                        if (Platform.OS === "web") {
+                          setHoveredMaintenanceTypesRowId((current) => (current === item.id ? null : current));
+                        }
+                      }}
+                    >
+                      {(() => {
+                        const types = Array.isArray(item.maintenanceTypes) ? item.maintenanceTypes : [];
+                        const isHovered = Platform.OS === "web" && hoveredMaintenanceTypesRowId === item.id;
+                        const previewCount = 2;
+                        const visibleTypes = isHovered ? types : types.slice(0, previewCount);
+
+                        return (
+                          <>
+                            {visibleTypes.map((type) => (
+                              <Text
+                                key={`${item.id}-${type}`}
+                                numberOfLines={isHovered ? undefined : 1}
+                                style={styles.maintenanceTypeLine}
+                              >
+                                • {type}
+                              </Text>
+                            ))}
+                            {!isHovered && types.length > previewCount ? (
+                              <Text style={styles.maintenanceTypeMore}>+{types.length - previewCount}</Text>
+                            ) : null}
+                          </>
+                        );
+                      })()}
+                    </Pressable>
                     <Text numberOfLines={1} style={[styles.gridCell, col.cost]}>{item.cost} ₺</Text>
                     <View style={[styles.rowActions, col.actions]}>
                       <Pressable style={styles.rowIconBtn} onPress={() => startEdit(item)}>
@@ -883,6 +916,24 @@ const createStyles = (isDark) => StyleSheet.create({
   checkboxBox: { fontSize: 16, marginRight: 8, color: isDark ? "#3B8CB4" : "#1B7FAB" },
   checkboxLabel: { color: isDark ? "#B7D2E2" : "#5A7588", fontSize: 13, fontWeight: "500", flex: 1 },
   checkboxLabelSelected: { color: isDark ? "#DDF4FF" : "#12384D", fontWeight: "600" },
+
+  maintenanceTypesCell: {
+    justifyContent: "center",
+    alignSelf: "stretch",
+    paddingVertical: 2,
+  },
+  maintenanceTypeLine: {
+    color: isDark ? "#D3ECFB" : "#163041",
+    fontSize: 11,
+    fontWeight: "500",
+    lineHeight: 16,
+  },
+  maintenanceTypeMore: {
+    color: isDark ? "#9CC4D8" : "#3F6B82",
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 2,
+  },
 
   emptyStateInline: { alignItems: "center", justifyContent: "center", paddingVertical: 24 },
 
