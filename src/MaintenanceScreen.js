@@ -929,6 +929,7 @@ const createStyles = (isDark) => StyleSheet.create({
 
   maintenanceTypesCell: {
     justifyContent: "center",
+    alignItems: "center",
     alignSelf: "stretch",
     paddingVertical: 2,
   },
@@ -937,12 +938,14 @@ const createStyles = (isDark) => StyleSheet.create({
     fontSize: 11,
     fontWeight: "500",
     lineHeight: 16,
+    textAlign: "center",
   },
   maintenanceTypeMore: {
     color: isDark ? "#9CC4D8" : "#3F6B82",
     fontSize: 10,
     fontWeight: "700",
     marginTop: 2,
+    textAlign: "center",
   },
 
   emptyStateInline: { alignItems: "center", justifyContent: "center", paddingVertical: 24 },
