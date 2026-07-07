@@ -1,194 +1,164 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useEffect, useRef } from "react";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 
-const BG = "#0B1220";
-const CARD = "#0E1729";
-const LINE = "#1E2A3E";
-const ROAD = "#1B263A";
-const ROAD_ACTIVE = "#223A5B";
-const PRIMARY = "#7DD3FC";
-const PRIMARY_SOFT = "#A5E6FF";
-const TEXT_DIM = "#8AA6BF";
-const TEXT_MAIN = "#EAF4FF";
+const BG = "#070B12";
+const ROAD = "#111926";
+const ROAD_EDGE = "#1B2A3F";
+const LANE = "#7B8DA41F";
+const CAR_BODY = "#DBE6F2";
+const CAR_ACCENT = "#9DB6CA";
+const WHEEL = "#1B2635";
+const WHEEL_RING = "#4A6178";
 
-const STEPS = [
-  { key: "fuel", label: "Fuel", icon: "gas-station" },
-  { key: "maintenance", label: "Maintenance", icon: "wrench" },
-  { key: "statistics", label: "Statistics", icon: "chart-line" },
-  { key: "destination", label: "Destination", icon: "flag-checkered" },
-];
-
-function StepNode({ icon, label, reached, active }) {
-  return (
-    <View style={styles.stepWrap}>
-      <View
-        style={[
-          styles.stepDot,
-          reached && styles.stepDotReached,
-          active && styles.stepDotActive,
-        ]}
-      >
-        <MaterialCommunityIcons
-          name={icon}
-          size={16}
-          color={reached || active ? PRIMARY_SOFT : "#5A6E86"}
-        />
-      </View>
-      <Text style={[styles.stepLabel, reached && styles.stepLabelReached, active && styles.stepLabelActive]}>{label}</Text>
-    </View>
-  );
+function useLoop(anim, duration, easing = Easing.linear) {
+  useEffect(() => {
+    anim.setValue(0);
+    const loop = Animated.loop(
+      Animated.timing(anim, {
+        toValue: 1,
+        duration,
+        easing,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim, duration, easing]);
 }
 
-function CarBody() {
+function Car({ suspension, wheelSpin }) {
   return (
-    <View style={styles.car}>
+    <Animated.View style={[styles.carWrap, { transform: [{ translateY: suspension }] }]}>
+      <View style={styles.carShadow} />
       <View style={styles.carCabin} />
       <View style={styles.carBody}>
         <View style={styles.carWindow} />
+        <View style={styles.carHighlight} />
       </View>
-      <View style={[styles.wheel, styles.wheelLeft]} />
-      <View style={[styles.wheel, styles.wheelRight]} />
-    </View>
+
+      <Animated.View style={[styles.wheel, styles.wheelLeft, { transform: [{ rotate: wheelSpin }] }]}> 
+        <View style={styles.wheelInner} />
+      </Animated.View>
+      <Animated.View style={[styles.wheel, styles.wheelRight, { transform: [{ rotate: wheelSpin }] }]}> 
+        <View style={styles.wheelInner} />
+      </Animated.View>
+    </Animated.View>
   );
 }
 
 export default function DrivingLogoLoader() {
-  const progress = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
-  const [progressValue, setProgressValue] = useState(0);
+  const laneFlow = useRef(new Animated.Value(0)).current;
+  const laneFlowSoft = useRef(new Animated.Value(0)).current;
+  const glowPulse = useRef(new Animated.Value(0)).current;
+  const wheel = useRef(new Animated.Value(0)).current;
+  const body = useRef(new Animated.Value(0)).current;
+  const breathe = useRef(new Animated.Value(0)).current;
+  const lightSweep = useRef(new Animated.Value(0)).current;
 
-  const milestoneStops = useMemo(() => [0.2, 0.45, 0.7, 0.95], []);
+  useLoop(laneFlow, 1400, Easing.linear);
+  useLoop(laneFlowSoft, 2600, Easing.linear);
+  useLoop(glowPulse, 2600, Easing.inOut(Easing.sin));
+  useLoop(wheel, 900, Easing.linear);
+  useLoop(body, 1800, Easing.inOut(Easing.sin));
+  useLoop(breathe, 4200, Easing.inOut(Easing.cubic));
+  useLoop(lightSweep, 5200, Easing.inOut(Easing.quad));
 
-  useEffect(() => {
-    progress.setValue(0);
-    const move = Animated.loop(
-      Animated.sequence([
-        Animated.timing(progress, {
-          toValue: 1,
-          duration: 5600,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(progress, {
-          toValue: 0,
-          duration: 600,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    move.start();
-    return () => move.stop();
-  }, [progress]);
-
-  useEffect(() => {
-    pulse.setValue(0);
-    const glow = Animated.loop(
-      Animated.timing(pulse, {
-        toValue: 1,
-        duration: 2200,
-        easing: Easing.inOut(Easing.sin),
-        useNativeDriver: true,
-      }),
-      { resetBeforeIteration: true }
-    );
-    glow.start();
-    return () => glow.stop();
-  }, [pulse]);
-
-  useEffect(() => {
-    const id = progress.addListener(({ value }) => {
-      setProgressValue(value);
-    });
-    return () => progress.removeListener(id);
-  }, [progress]);
-
-  const carTranslateX = progress.interpolate({
+  const laneShiftA = laneFlow.interpolate({
     inputRange: [0, 1],
-    outputRange: [-8, 292],
+    outputRange: [0, -52],
   });
-
-  const roadFillWidth = `${8 + progressValue * 88}%`;
-  const isFinishing = progressValue >= 0.9;
-
-  const destinationMorphScale = progress.interpolate({
-    inputRange: [0, 0.9, 1],
-    outputRange: [1, 1, 1.1],
-  });
-
-  const destinationMorphOpacity = progress.interpolate({
-    inputRange: [0, 0.9, 1],
-    outputRange: [0, 0, 0.35],
-  });
-
-  const ambientGlow = pulse.interpolate({
+  const laneShiftB = laneFlow.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.2, 0.48],
+    outputRange: [52, 0],
+  });
+
+  const laneShiftC = laneFlowSoft.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -52],
+  });
+
+  const ambientOpacity = glowPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.12, 0.28],
+  });
+
+  const suspension = body.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, -1.6, 0],
+  });
+
+  const stageScale = breathe.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 1.005, 1],
+  });
+
+  const stageY = breathe.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, -1, 0],
+  });
+
+  const sweepX = lightSweep.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-340, 340],
+  });
+
+  const sweepOpacity = lightSweep.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0.16, 0],
+  });
+
+  const wheelSpin = wheel.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
   });
 
   return (
     <View style={styles.root}>
-      <View style={styles.panel}>
-        <Animated.View style={[styles.ambientGlow, { opacity: ambientGlow }]} />
+      <View style={styles.bgVignetteTop} />
+      <View style={styles.bgVignetteBottom} />
+      <Animated.View style={[styles.ambientGlow, { opacity: ambientOpacity }]} />
 
-        <Text style={styles.title}>Preparing Your Drive</Text>
+      <Animated.View style={[styles.stage, { transform: [{ translateY: stageY }, { scale: stageScale }] }]}>
+        <View style={styles.road}>
+          <View style={styles.roadEdgeTop} />
+          <View style={styles.roadEdgeBottom} />
 
-        <View style={styles.roadSection}>
-          <View style={styles.roadTrack}>
-            <View style={[styles.roadProgress, { width: roadFillWidth }]} />
-            <View style={styles.roadDashRow}>
-              <View style={styles.roadDash} />
-              <View style={styles.roadDash} />
-              <View style={styles.roadDash} />
-              <View style={styles.roadDash} />
-            </View>
+          <Animated.View style={[styles.roadSweep, { transform: [{ translateX: sweepX }], opacity: sweepOpacity }]} />
 
-            <Animated.View style={[styles.carWrap, { transform: [{ translateX: carTranslateX }] }]}>
-              <CarBody />
+          <View style={styles.laneViewport}>
+            <Animated.View style={[styles.laneTrack, { transform: [{ translateX: laneShiftA }] }]}>
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+            </Animated.View>
+
+            <Animated.View style={[styles.laneTrack, styles.laneTrackSecond, { transform: [{ translateX: laneShiftB }] }]}>
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+              <View style={styles.laneMark} />
+            </Animated.View>
+
+            <Animated.View style={[styles.laneTrack, styles.laneTrackThird, { transform: [{ translateX: laneShiftC }] }]}>
+              <View style={styles.laneMarkSoft} />
+              <View style={styles.laneMarkSoft} />
+              <View style={styles.laneMarkSoft} />
+              <View style={styles.laneMarkSoft} />
+              <View style={styles.laneMarkSoft} />
+              <View style={styles.laneMarkSoft} />
             </Animated.View>
           </View>
 
-          <View style={styles.milestoneRow}>
-            {STEPS.map((step, idx) => {
-              const stop = milestoneStops[idx];
-              const reached = progressValue >= stop;
-              const active = progressValue > stop - 0.08 && progressValue < stop + 0.08;
-              return (
-                <StepNode
-                  key={step.key}
-                  icon={step.icon}
-                  label={step.label}
-                  reached={reached}
-                  active={active}
-                />
-              );
-            })}
+          <View style={styles.carAnchor}>
+            <Car suspension={suspension} wheelSpin={wheelSpin} />
           </View>
         </View>
-
-        <View style={styles.footerRow}>
-          <Text style={styles.footerText}>Synchronizing vehicle timeline</Text>
-          <Text style={styles.footerPercent}>{Math.round(progressValue * 100)}%</Text>
-        </View>
-
-        <Animated.View
-          style={[
-            styles.destinationOverlay,
-            {
-              opacity: destinationMorphOpacity,
-              transform: [{ scale: destinationMorphScale }],
-            },
-          ]}
-        >
-          <View style={styles.destinationBadge}>
-            <MaterialCommunityIcons name="flag-checkered" size={16} color={PRIMARY_SOFT} />
-            <Text style={styles.destinationText}>Opening destination screen</Text>
-          </View>
-        </Animated.View>
-
-        {isFinishing ? <View style={styles.destinationHintLine} /> : null}
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -199,209 +169,183 @@ const styles = StyleSheet.create({
     backgroundColor: BG,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  panel: {
-    width: "100%",
-    maxWidth: 440,
-    borderRadius: 20,
-    backgroundColor: CARD,
-    borderWidth: 1,
-    borderColor: LINE,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    overflow: "hidden",
+    paddingHorizontal: 26,
   },
   ambientGlow: {
     position: "absolute",
-    top: -60,
-    left: "20%",
-    width: 220,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: "#60A5FA14",
+  },
+  bgVignetteTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     height: 220,
-    borderRadius: 110,
-    backgroundColor: "#38BDF81A",
+    backgroundColor: "#0D17241F",
   },
-  title: {
-    color: TEXT_MAIN,
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.3,
-    marginBottom: 18,
+  bgVignetteBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 220,
+    backgroundColor: "#00000022",
   },
-
-  roadSection: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#22324A",
-    backgroundColor: "#0C1626",
-    padding: 12,
+  stage: {
+    width: "100%",
+    maxWidth: 420,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  roadTrack: {
-    height: 48,
+  road: {
+    width: "100%",
+    height: 74,
     borderRadius: 999,
     backgroundColor: ROAD,
     borderWidth: 1,
-    borderColor: "#22344E",
-    justifyContent: "center",
+    borderColor: ROAD_EDGE,
     overflow: "hidden",
+    justifyContent: "center",
   },
-  roadProgress: {
-    ...StyleSheet.absoluteFillObject,
-    right: undefined,
-    backgroundColor: ROAD_ACTIVE,
+  roadSweep: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: 90,
+    backgroundColor: "#BFD7EA14",
   },
-  roadDashRow: {
+  roadEdgeTop: {
+    position: "absolute",
+    top: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: "#9CB3C114",
+  },
+  roadEdgeBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 16,
+    right: 16,
+    height: 1,
+    backgroundColor: "#9CB3C10E",
+  },
+  laneViewport: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  laneTrack: {
+    position: "absolute",
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "space-evenly",
     alignItems: "center",
+    paddingHorizontal: 10,
   },
-  roadDash: {
-    width: 26,
+  laneTrackSecond: {
+    opacity: 0.72,
+  },
+  laneTrackThird: {
+    opacity: 0.48,
+  },
+  laneMark: {
+    width: 24,
     height: 2,
     borderRadius: 999,
-    backgroundColor: "#7A8DA61A",
+    backgroundColor: LANE,
+  },
+  laneMarkSoft: {
+    width: 24,
+    height: 1,
+    borderRadius: 999,
+    backgroundColor: "#A4B5C412",
   },
 
-  carWrap: {
+  carAnchor: {
     position: "absolute",
-    top: 8,
-    left: 0,
+    left: "50%",
+    marginLeft: -21,
+    top: 24,
   },
-  car: {
+  carWrap: {
     width: 42,
-    height: 24,
+    height: 26,
     alignItems: "center",
     justifyContent: "flex-end",
   },
+  carShadow: {
+    position: "absolute",
+    bottom: 0,
+    width: 30,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "#0A142199",
+  },
   carCabin: {
-    width: 20,
-    height: 8,
+    width: 18,
+    height: 7,
     borderTopLeftRadius: 6,
     borderTopRightRadius: 6,
-    backgroundColor: "#BFD7EA",
+    backgroundColor: CAR_ACCENT,
+    opacity: 0.92,
     marginBottom: -2,
-    opacity: 0.9,
   },
   carBody: {
-    width: 38,
+    width: 40,
     height: 12,
-    borderRadius: 6,
-    backgroundColor: "#D6E6F3",
+    borderRadius: 7,
+    backgroundColor: CAR_BODY,
     borderWidth: 1,
-    borderColor: "#AEC7DA",
+    borderColor: "#B6CBDB",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   carWindow: {
     width: 12,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#8CB6D4",
-    opacity: 0.8,
+    backgroundColor: "#8EAEC4",
+    opacity: 0.85,
+  },
+  carHighlight: {
+    position: "absolute",
+    top: 1,
+    left: 4,
+    right: 4,
+    height: 1,
+    backgroundColor: "#FFFFFF4A",
   },
   wheel: {
     position: "absolute",
     bottom: 0,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#1E2E42",
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: WHEEL,
     borderWidth: 1,
-    borderColor: "#4D6782",
-  },
-  wheelLeft: { left: 8 },
-  wheelRight: { right: 8 },
-
-  milestoneRow: {
-    marginTop: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 6,
-  },
-  stepWrap: {
-    flex: 1,
-    alignItems: "center",
-  },
-  stepDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#132036",
-    borderWidth: 1,
-    borderColor: "#2A3D59",
+    borderColor: WHEEL_RING,
     alignItems: "center",
     justifyContent: "center",
   },
-  stepDotReached: {
-    backgroundColor: "#113251",
-    borderColor: "#3C6D95",
-    shadowColor: "#67E8F9",
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  stepDotActive: {
-    backgroundColor: "#164064",
-    borderColor: "#5AA6DA",
-  },
-  stepLabel: {
-    marginTop: 8,
-    color: TEXT_DIM,
-    fontSize: 11,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  stepLabelReached: {
-    color: "#CFEAFF",
-  },
-  stepLabelActive: {
-    color: PRIMARY_SOFT,
-  },
-
-  footerRow: {
-    marginTop: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  footerText: {
-    color: "#90A9C1",
-    fontSize: 11,
-    letterSpacing: 0.2,
-  },
-  footerPercent: {
-    color: "#D8EEFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  destinationOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#0A132199",
-  },
-  destinationBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#102239",
-    borderWidth: 1,
-    borderColor: "#2E5578",
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  destinationText: {
-    color: "#D6EEFF",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  destinationHintLine: {
-    marginTop: 12,
+  wheelInner: {
+    width: 2,
     height: 2,
-    borderRadius: 999,
-    backgroundColor: "#3E6E96",
-    opacity: 0.4,
+    borderRadius: 1,
+    backgroundColor: "#7B8DA5",
+  },
+  wheelLeft: {
+    left: 8,
+  },
+  wheelRight: {
+    right: 8,
   },
 });
