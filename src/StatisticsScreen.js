@@ -492,64 +492,6 @@ export default function StatisticsScreen({ themeMode = "dark", lang = "tr", user
       </View>
 
       <View style={[styles.analysisCard, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
-        <Text style={[styles.sectionTitle, { color: C.title }]}>{i.analysisTitle}</Text>
-        <Text style={[styles.sectionSub, { color: C.sub }]}>{i.analysisSubtitle}</Text>
-
-        {analysisLoading ? (
-          <View style={[styles.loadingCard, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
-            <ActivityIndicator size="small" color="#1B7FAB" />
-          </View>
-        ) : (combinedSummary.fuelEntriesCount === 0 && combinedSummary.maintenanceEntriesCount === 0) ? (
-          <View style={[styles.loadingCard, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
-            <Text style={[styles.loadingText, { color: C.empty }]}>{i.analysisNoData}</Text>
-          </View>
-        ) : (
-          <View style={styles.analysisGrid}>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisFuelEntries}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{combinedSummary.fuelEntriesCount}</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisMaintEntries}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{combinedSummary.maintenanceEntriesCount}</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisFuelCost}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{fmtCurrency.format(combinedSummary.fuelCost)} ₺</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisMaintCost}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{fmtCurrency.format(combinedSummary.maintenanceCost)} ₺</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisTotalCost}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{fmtCurrency.format(combinedSummary.totalCost)} ₺</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisFuelLitres}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{fmtNumber.format(combinedSummary.fuelLitres)} L</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisAvgFuelUnit}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{combinedSummary.avgFuelUnit === null ? "-" : `${fmtCurrency.format(combinedSummary.avgFuelUnit)} ₺`}</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisAvgMaintCost}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{combinedSummary.avgMaintenanceCost === null ? "-" : `${fmtCurrency.format(combinedSummary.avgMaintenanceCost)} ₺`}</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisCostPerKm}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]}>{combinedSummary.approxCostPerKm === null ? "-" : `${fmtCurrency.format(combinedSummary.approxCostPerKm)} ₺`}</Text>
-            </View>
-            <View style={[styles.analysisBox, { backgroundColor: C.chartBg, borderColor: C.chartBorder }]}>
-              <Text style={[styles.analysisLabel, { color: C.sub }]}>{i.analysisTopMaintType}</Text>
-              <Text style={[styles.analysisValue, { color: C.title }]} numberOfLines={2}>{combinedSummary.topMaintenanceType || i.analysisUnknownType}</Text>
-            </View>
-          </View>
-        )}
-      </View>
-
-      <View style={[styles.analysisCard, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
         <Text style={[styles.sectionTitle, { color: C.title }]}>{i.statsFuelChartsTitle}</Text>
         <Text style={[styles.sectionSub, { color: C.sub }]}>{i.statsFuelChartsSubtitle}</Text>
 
