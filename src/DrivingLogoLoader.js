@@ -169,24 +169,24 @@ export default function DrivingLogoLoader({ themeMode = "dark" }) {
         </Layer>
 
         <View style={styles.roadArea}>
-          <View style={styles.road} />
-          <View style={styles.roadEdgeTop} />
-          <View style={styles.roadEdgeBottom} />
+          <View style={[styles.road, isDark ? styles.roadDark : styles.roadLight]} />
+          <View style={[styles.roadEdgeTop, isDark ? styles.roadEdgeTopDark : styles.roadEdgeTopLight]} />
+          <View style={[styles.roadEdgeBottom, isDark ? styles.roadEdgeBottomDark : styles.roadEdgeBottomLight]} />
 
           <Layer style={[styles.layer, styles.textureLayer]} x1={near.first} x2={near.second}>
-            <View style={[styles.textureStripe, { left: 8, width: 92 }]} />
-            <View style={[styles.textureStripe, { left: 126, width: 68 }]} />
-            <View style={[styles.textureStripe, { left: 218, width: 84 }]} />
-            <View style={[styles.textureStripe, { left: 330, width: 58 }]} />
-            <View style={[styles.textureStripe, { left: 412, width: 76 }]} />
+            <View style={[styles.textureStripe, isDark ? styles.textureStripeDark : styles.textureStripeLight, { left: 8, width: 92 }]} />
+            <View style={[styles.textureStripe, isDark ? styles.textureStripeDark : styles.textureStripeLight, { left: 126, width: 68 }]} />
+            <View style={[styles.textureStripe, isDark ? styles.textureStripeDark : styles.textureStripeLight, { left: 218, width: 84 }]} />
+            <View style={[styles.textureStripe, isDark ? styles.textureStripeDark : styles.textureStripeLight, { left: 330, width: 58 }]} />
+            <View style={[styles.textureStripe, isDark ? styles.textureStripeDark : styles.textureStripeLight, { left: 412, width: 76 }]} />
           </Layer>
 
           <Layer style={[styles.layer, styles.centerDashLayer]} x1={road.first} x2={road.second}>
-            <View style={[styles.centerDash, { left: 22 }]} />
-            <View style={[styles.centerDash, { left: 128 }]} />
-            <View style={[styles.centerDash, { left: 234 }]} />
-            <View style={[styles.centerDash, { left: 340 }]} />
-            <View style={[styles.centerDash, { left: 446 }]} />
+            <View style={[styles.centerDash, isDark ? styles.centerDashDark : styles.centerDashLight, { left: 22 }]} />
+            <View style={[styles.centerDash, isDark ? styles.centerDashDark : styles.centerDashLight, { left: 128 }]} />
+            <View style={[styles.centerDash, isDark ? styles.centerDashDark : styles.centerDashLight, { left: 234 }]} />
+            <View style={[styles.centerDash, isDark ? styles.centerDashDark : styles.centerDashLight, { left: 340 }]} />
+            <View style={[styles.centerDash, isDark ? styles.centerDashDark : styles.centerDashLight, { left: 446 }]} />
           </Layer>
         </View>
 
@@ -315,26 +315,27 @@ const styles = StyleSheet.create({
     top: 22,
     height: 54,
     borderRadius: 10,
-    backgroundColor: "#3B4956",
   },
+  roadDark: { backgroundColor: "#3B4956" },
+  roadLight: { backgroundColor: "#B7C5CF" },
   roadEdgeTop: {
     position: "absolute",
     left: 0,
     right: 0,
     top: 22,
     height: 2,
-    backgroundColor: "#9CB2C0",
-    opacity: 0.9,
   },
+  roadEdgeTopDark: { backgroundColor: "#9CB2C0", opacity: 0.9 },
+  roadEdgeTopLight: { backgroundColor: "#EDF5FA", opacity: 0.95 },
   roadEdgeBottom: {
     position: "absolute",
     left: 0,
     right: 0,
     top: 74,
     height: 2,
-    backgroundColor: "#8398A6",
-    opacity: 0.65,
   },
+  roadEdgeBottomDark: { backgroundColor: "#8398A6", opacity: 0.65 },
+  roadEdgeBottomLight: { backgroundColor: "#DCE9F1", opacity: 0.85 },
   textureLayer: {
     top: 34,
     height: 10,
@@ -343,9 +344,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     height: 1,
     borderRadius: 1,
-    backgroundColor: "#738592",
-    opacity: 0.92,
   },
+  textureStripeDark: { backgroundColor: "#738592", opacity: 0.92 },
+  textureStripeLight: { backgroundColor: "#8EA1AF", opacity: 0.7 },
   centerDashLayer: {
     top: 47,
     height: 5,
@@ -355,9 +356,9 @@ const styles = StyleSheet.create({
     width: 54,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#ECF7FF",
-    opacity: 1,
   },
+  centerDashDark: { backgroundColor: "#ECF7FF", opacity: 1 },
+  centerDashLight: { backgroundColor: "#FFFFFF", opacity: 1 },
 
   carWrap: {
     position: "absolute",

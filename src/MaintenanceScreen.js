@@ -29,7 +29,7 @@ const columnWidths = {
   actions: 70,
 };
 const tableMinWidth = Object.values(columnWidths).reduce((sum, n) => sum + n, 0);
-const MIN_INITIAL_LOADER_MS = 2200;
+const MIN_INITIAL_LOADER_MS = 1800;
 
 function formatDateTR(date) {
   return date.toLocaleDateString("tr-TR");
@@ -202,18 +202,21 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   }, [userId]);
 
   useEffect(() => {
+    if (isInitialLoading) return;
+
     let mounted = true;
-    (async () => {
+    const timer = setTimeout(async () => {
       try {
         const dbTypes = await loadMaintenanceTypes();
         if (mounted) setMaintenanceTypeOptions(dbTypes);
       } catch (_) {}
-    })();
+    }, 120);
 
     return () => {
       mounted = false;
+      clearTimeout(timer);
     };
-  }, []);
+  }, [isInitialLoading]);
 
   const onRefresh = async () => {
     await loadData();
