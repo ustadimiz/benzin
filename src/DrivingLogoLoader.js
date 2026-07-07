@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const TILE_WIDTH = 520;
 
@@ -135,6 +136,8 @@ export default function DrivingLogoLoader() {
   return (
     <View style={styles.root}>
       <View style={styles.scene}>
+        <View style={styles.skyBand} />
+
         <Layer style={[styles.layer, styles.farLayer]} x1={far.first} x2={far.second}>
           <View style={[styles.hill, { left: 20, width: 170, height: 74 }]} />
           <View style={[styles.hill, { left: 150, width: 210, height: 96 }]} />
@@ -166,6 +169,8 @@ export default function DrivingLogoLoader() {
 
         <View style={styles.roadArea}>
           <View style={styles.road} />
+          <View style={styles.roadEdgeTop} />
+          <View style={styles.roadEdgeBottom} />
 
           <Layer style={[styles.layer, styles.textureLayer]} x1={near.first} x2={near.second}>
             <View style={[styles.textureStripe, { left: 8, width: 92 }]} />
@@ -186,16 +191,12 @@ export default function DrivingLogoLoader() {
 
         <Animated.View style={[styles.carWrap, { transform: [{ translateY: carY }] }]}>
           <View style={styles.carShadow} />
-          <View style={styles.carBody}>
-            <View style={styles.carCabin} />
-            <View style={styles.carLower} />
-            <View style={styles.carGlass} />
-            <View style={[styles.wheel, styles.wheelLeft]}>
-              <Animated.View style={[styles.wheelCore, { transform: [{ rotate: wheelRotate }] }]} />
-            </View>
-            <View style={[styles.wheel, styles.wheelRight]}>
-              <Animated.View style={[styles.wheelCore, { transform: [{ rotate: wheelRotate }] }]} />
-            </View>
+          <MaterialCommunityIcons name="car-sports" size={56} color="#EEF7FF" />
+          <View style={[styles.wheel, styles.wheelLeft]}>
+            <Animated.View style={[styles.wheelCore, { transform: [{ rotate: wheelRotate }] }]} />
+          </View>
+          <View style={[styles.wheel, styles.wheelRight]}>
+            <Animated.View style={[styles.wheelCore, { transform: [{ rotate: wheelRotate }] }]} />
           </View>
         </Animated.View>
       </View>
@@ -212,10 +213,19 @@ const styles = StyleSheet.create({
   },
   scene: {
     width: "100%",
-    maxWidth: 420,
-    height: 220,
+    maxWidth: 520,
+    height: 230,
     overflow: "hidden",
     backgroundColor: "transparent",
+  },
+  skyBand: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 112,
+    backgroundColor: "#173A4D",
+    opacity: 0.4,
   },
   layer: {
     position: "absolute",
@@ -239,8 +249,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderTopLeftRadius: 120,
     borderTopRightRadius: 120,
-    backgroundColor: "#2B4E61",
-    opacity: 0.55,
+    backgroundColor: "#4C7A90",
+    opacity: 0.65,
   },
 
   midLayer: {
@@ -258,14 +268,14 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 10,
-    backgroundColor: "#3A6A58",
+    backgroundColor: "#67A08A",
   },
   treeTrunk: {
     marginTop: 2,
     width: 3,
     height: 20,
     borderRadius: 2,
-    backgroundColor: "#4B5C47",
+    backgroundColor: "#72866D",
   },
   sign: {
     position: "absolute",
@@ -277,20 +287,20 @@ const styles = StyleSheet.create({
     width: 14,
     height: 8,
     borderRadius: 2,
-    backgroundColor: "#5D7484",
+    backgroundColor: "#9FB8C7",
   },
   signPole: {
     width: 2,
     height: 18,
     borderRadius: 2,
-    backgroundColor: "#6C8190",
+    backgroundColor: "#9BB0BD",
   },
 
   roadArea: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 30,
+    bottom: 24,
     height: 88,
     justifyContent: "center",
   },
@@ -301,7 +311,25 @@ const styles = StyleSheet.create({
     top: 20,
     height: 46,
     borderRadius: 10,
-    backgroundColor: "#2A3640",
+    backgroundColor: "#38444F",
+  },
+  roadEdgeTop: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 20,
+    height: 2,
+    backgroundColor: "#73818D",
+    opacity: 0.6,
+  },
+  roadEdgeBottom: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 64,
+    height: 2,
+    backgroundColor: "#73818D",
+    opacity: 0.35,
   },
   textureLayer: {
     top: 29,
@@ -311,7 +339,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     height: 1,
     borderRadius: 1,
-    backgroundColor: "#3D4B56",
+    backgroundColor: "#5A6872",
     opacity: 0.7,
   },
   centerDashLayer: {
@@ -323,70 +351,39 @@ const styles = StyleSheet.create({
     width: 54,
     height: 3,
     borderRadius: 2,
-    backgroundColor: "#9FC1D4",
-    opacity: 0.9,
+    backgroundColor: "#D0E8F7",
+    opacity: 0.95,
   },
 
   carWrap: {
     position: "absolute",
     left: "50%",
-    marginLeft: -38,
-    bottom: 42,
-    width: 76,
+    marginLeft: -34,
+    bottom: 44,
+    width: 68,
     alignItems: "center",
   },
   carShadow: {
     position: "absolute",
     bottom: -4,
-    width: 58,
-    height: 10,
+    width: 62,
+    height: 12,
     borderRadius: 999,
-    backgroundColor: "#0D1318",
-    opacity: 0.35,
-  },
-  carBody: {
-    width: 76,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  carCabin: {
-    position: "absolute",
-    top: 1,
-    width: 40,
-    height: 14,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-    backgroundColor: "#D8E7F0",
-  },
-  carLower: {
-    width: 70,
-    height: 18,
-    borderRadius: 8,
-    backgroundColor: "#EEF4F8",
-  },
-  carGlass: {
-    position: "absolute",
-    top: 4,
-    width: 28,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#9AB9CC",
+    backgroundColor: "#10161B",
+    opacity: 0.42,
   },
   wheel: {
     position: "absolute",
-    bottom: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 12,
+    bottom: 1,
+    width: 13,
+    height: 13,
+    borderRadius: 13,
     backgroundColor: "#1C252B",
     alignItems: "center",
     justifyContent: "center",
   },
-  wheelLeft: { left: 14 },
-  wheelRight: { right: 14 },
+  wheelLeft: { left: 8 },
+  wheelRight: { right: 8 },
   wheelCore: {
     width: 6,
     height: 6,
