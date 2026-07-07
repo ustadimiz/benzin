@@ -35,6 +35,7 @@ const columnWidths = {
   actions: 70,
 };
 const tableMinWidth = Object.values(columnWidths).reduce((sum, n) => sum + n, 0);
+const MIN_INITIAL_LOADER_MS = 900;
 
 function parseNumber(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
@@ -255,6 +256,7 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
       : "Enter a valid date. Example: 25.03.2026";
 
   const loadData = async () => {
+    const startedAt = Date.now();
     try {
       const parsed = await loadFuelState(userId);
       const nextVehicles = parsed.vehicles || [];
@@ -265,7 +267,9 @@ export default function FuelTrackerScreen({ lang = "tr", userId = "default", the
       setSelectedVehicle((current) => nextVehicles.find((vehicle) => vehicle.id === current?.id) || nextVehicles[0] || null);
     } catch (_) {
     } finally {
-      setIsInitialLoading(false);
+      const elapsed = Date.now() - startedAt;
+      const waitMs = Math.max(0, MIN_INITIAL_LOADER_MS - elapsed);
+      setTimeout(() => setIsInitialLoading(false), waitMs);
     }
   };
 
