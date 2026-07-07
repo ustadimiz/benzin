@@ -1,235 +1,204 @@
 import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 
-export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükleniyor..." }) {
-  const isDark = themeMode === "dark";
+const TILE_WIDTH = 520;
 
-  const laneFlow = useRef(new Animated.Value(0)).current;
+function makeLoopPair(animValue, duration) {
+  const first = animValue.interpolate({ inputRange: [0, 1], outputRange: [0, -TILE_WIDTH] });
+  const second = animValue.interpolate({ inputRange: [0, 1], outputRange: [TILE_WIDTH, 0] });
+  return {
+    first,
+    second,
+    duration,
+  };
+}
+
+function Layer({ x1, x2, style, children }) {
+  return (
+    <View style={style} pointerEvents="none">
+      <Animated.View style={[styles.tile, { transform: [{ translateX: x1 }] }]}>{children}</Animated.View>
+      <Animated.View style={[styles.tile, { transform: [{ translateX: x2 }] }]}>{children}</Animated.View>
+    </View>
+  );
+}
+
+export default function DrivingLogoLoader() {
+  const farFlow = useRef(new Animated.Value(0)).current;
+  const midFlow = useRef(new Animated.Value(0)).current;
+  const nearFlow = useRef(new Animated.Value(0)).current;
+  const roadFlow = useRef(new Animated.Value(0)).current;
+  const wheelSpin = useRef(new Animated.Value(0)).current;
   const carBob = useRef(new Animated.Value(0)).current;
-  const carSway = useRef(new Animated.Value(0)).current;
-  const glowPulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const laneLoop = Animated.loop(
-      Animated.timing(laneFlow, {
+    const far = makeLoopPair(farFlow, 7600);
+    const mid = makeLoopPair(midFlow, 5200);
+    const near = makeLoopPair(nearFlow, 3400);
+    const road = makeLoopPair(roadFlow, 960);
+
+    const farLoop = Animated.loop(
+      Animated.timing(farFlow, {
         toValue: 1,
-        duration: 820,
+        duration: far.duration,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     );
-
+    const midLoop = Animated.loop(
+      Animated.timing(midFlow, {
+        toValue: 1,
+        duration: mid.duration,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    const nearLoop = Animated.loop(
+      Animated.timing(nearFlow, {
+        toValue: 1,
+        duration: near.duration,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    const roadLoop = Animated.loop(
+      Animated.timing(roadFlow, {
+        toValue: 1,
+        duration: road.duration,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    const wheelLoop = Animated.loop(
+      Animated.timing(wheelSpin, {
+        toValue: 1,
+        duration: 520,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
     const bobLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(carBob, {
           toValue: 1,
-          duration: 360,
+          duration: 370,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(carBob, {
           toValue: 0,
-          duration: 360,
+          duration: 370,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
       ])
     );
 
-    const swayLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(carSway, {
-          toValue: 1,
-          duration: 900,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(carSway, {
-          toValue: 0,
-          duration: 900,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    const glowLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowPulse, {
-          toValue: 1,
-          duration: 700,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(glowPulse, {
-          toValue: 0,
-          duration: 700,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    laneFlow.setValue(0);
+    farFlow.setValue(0);
+    midFlow.setValue(0);
+    nearFlow.setValue(0);
+    roadFlow.setValue(0);
+    wheelSpin.setValue(0);
     carBob.setValue(0);
-    carSway.setValue(0);
-    glowPulse.setValue(0);
 
-    laneLoop.start();
+    farLoop.start();
+    midLoop.start();
+    nearLoop.start();
+    roadLoop.start();
+    wheelLoop.start();
     bobLoop.start();
-    swayLoop.start();
-    glowLoop.start();
 
     return () => {
-      laneLoop.stop();
+      farLoop.stop();
+      midLoop.stop();
+      nearLoop.stop();
+      roadLoop.stop();
+      wheelLoop.stop();
       bobLoop.stop();
-      swayLoop.stop();
-      glowLoop.stop();
     };
-  }, [carBob, carSway, glowPulse, laneFlow]);
+  }, [carBob, farFlow, midFlow, nearFlow, roadFlow, wheelSpin]);
 
-  const laneY = laneFlow.interpolate({
+  const far = makeLoopPair(farFlow, 7600);
+  const mid = makeLoopPair(midFlow, 5200);
+  const near = makeLoopPair(nearFlow, 3400);
+  const road = makeLoopPair(roadFlow, 960);
+
+  const wheelRotate = wheelSpin.interpolate({
     inputRange: [0, 1],
-    outputRange: [-42, 58],
+    outputRange: ["0deg", "360deg"],
   });
 
   const carY = carBob.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -4],
+    outputRange: [0, -3.5],
   });
-
-  const carX = carSway.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [-1.5, 1.5, -1.5],
-  });
-
-  const carTilt = carSway.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: ["-1deg", "1deg", "-1deg"],
-  });
-
-  const glowOpacity = glowPulse.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.28, 0.6],
-  });
-
-  const roadGlow = glowPulse.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.14, 0.28],
-  });
-
-  const centerDashColor = isDark ? "#91D7FF" : "#5E8EA9";
-  const sideDashColor = isDark ? "#2F5E78" : "#9ABBCF";
-
-  const dashes = [
-    { top: 16, width: 7, height: 10 },
-    { top: 38, width: 9, height: 12 },
-    { top: 63, width: 11, height: 14 },
-    { top: 92, width: 14, height: 17 },
-    { top: 124, width: 17, height: 20 },
-  ];
 
   return (
-    <View style={[styles.root, isDark ? styles.rootDark : styles.rootLight]}>
+    <View style={styles.root}>
       <View style={styles.scene}>
-        <Animated.View
-          style={[
-            styles.roadGlow,
-            isDark ? styles.roadGlowDark : styles.roadGlowLight,
-            { opacity: roadGlow },
-          ]}
-        />
+        <Layer style={[styles.layer, styles.farLayer]} x1={far.first} x2={far.second}>
+          <View style={[styles.hill, { left: 20, width: 170, height: 74 }]} />
+          <View style={[styles.hill, { left: 150, width: 210, height: 96 }]} />
+          <View style={[styles.hill, { left: 330, width: 180, height: 78 }]} />
+        </Layer>
 
-        <View style={styles.road}>
-          <View style={[styles.roadBand, styles.band1, isDark ? styles.roadDark : styles.roadLight]} />
-          <View style={[styles.roadBand, styles.band2, isDark ? styles.roadDark : styles.roadLight]} />
-          <View style={[styles.roadBand, styles.band3, isDark ? styles.roadDark : styles.roadLight]} />
-          <View style={[styles.roadBand, styles.band4, isDark ? styles.roadDark : styles.roadLight]} />
-          <View style={[styles.roadBand, styles.band5, isDark ? styles.roadDark : styles.roadLight]} />
-
-          <View style={styles.laneLayer}>
-            {dashes.map((dash, index) => (
-              <Animated.View
-                key={`center-${index}`}
-                style={[
-                  styles.centerDash,
-                  {
-                    top: dash.top,
-                    width: dash.width,
-                    height: dash.height,
-                    transform: [{ translateY: laneY }],
-                    opacity: 0.95 - index * 0.12,
-                    backgroundColor: centerDashColor,
-                  },
-                ]}
-              />
-            ))}
-
-            {dashes.map((dash, index) => (
-              <Animated.View
-                key={`left-${index}`}
-                style={[
-                  styles.sideDash,
-                  {
-                    top: dash.top + 2,
-                    width: 10 + index * 4,
-                    left: 52 - index * 3,
-                    transform: [{ translateY: laneY }],
-                    opacity: 0.7 - index * 0.1,
-                    backgroundColor: sideDashColor,
-                  },
-                ]}
-              />
-            ))}
-
-            {dashes.map((dash, index) => (
-              <Animated.View
-                key={`right-${index}`}
-                style={[
-                  styles.sideDash,
-                  {
-                    top: dash.top + 2,
-                    width: 10 + index * 4,
-                    right: 52 - index * 3,
-                    transform: [{ translateY: laneY }],
-                    opacity: 0.7 - index * 0.1,
-                    backgroundColor: sideDashColor,
-                  },
-                ]}
-              />
-            ))}
+        <Layer style={[styles.layer, styles.midLayer]} x1={mid.first} x2={mid.second}>
+          <View style={[styles.tree, { left: 48 }]}>
+            <View style={styles.treeTop} />
+            <View style={styles.treeTrunk} />
           </View>
+          <View style={[styles.tree, { left: 150 }]}>
+            <View style={styles.treeTop} />
+            <View style={styles.treeTrunk} />
+          </View>
+          <View style={[styles.tree, { left: 280 }]}>
+            <View style={styles.treeTop} />
+            <View style={styles.treeTrunk} />
+          </View>
+          <View style={[styles.tree, { left: 400 }]}>
+            <View style={styles.treeTop} />
+            <View style={styles.treeTrunk} />
+          </View>
+          <View style={[styles.sign, { left: 228 }]}>
+            <View style={styles.signTop} />
+            <View style={styles.signPole} />
+          </View>
+        </Layer>
+
+        <View style={styles.roadArea}>
+          <View style={styles.road} />
+
+          <Layer style={[styles.layer, styles.textureLayer]} x1={near.first} x2={near.second}>
+            <View style={[styles.textureStripe, { left: 8, width: 92 }]} />
+            <View style={[styles.textureStripe, { left: 126, width: 68 }]} />
+            <View style={[styles.textureStripe, { left: 218, width: 84 }]} />
+            <View style={[styles.textureStripe, { left: 330, width: 58 }]} />
+            <View style={[styles.textureStripe, { left: 412, width: 76 }]} />
+          </Layer>
+
+          <Layer style={[styles.layer, styles.centerDashLayer]} x1={road.first} x2={road.second}>
+            <View style={[styles.centerDash, { left: 22 }]} />
+            <View style={[styles.centerDash, { left: 128 }]} />
+            <View style={[styles.centerDash, { left: 234 }]} />
+            <View style={[styles.centerDash, { left: 340 }]} />
+            <View style={[styles.centerDash, { left: 446 }]} />
+          </Layer>
         </View>
 
-        <Animated.View
-          style={[
-            styles.carWrap,
-            {
-              transform: [{ translateX: carX }, { translateY: carY }, { rotate: carTilt }],
-            },
-          ]}
-        >
-          <Animated.View
-            style={[
-              styles.carShadow,
-              isDark ? styles.carShadowDark : styles.carShadowLight,
-              { opacity: glowOpacity },
-            ]}
-          />
-
-          <MaterialCommunityIcons
-            name="car-sports"
-            size={50}
-            color={isDark ? "#E8F6FF" : "#2E4958"}
-          />
-
-          <Animated.View style={[styles.headlight, styles.headlightLeft, { opacity: glowOpacity }]} />
-          <Animated.View style={[styles.headlight, styles.headlightRight, { opacity: glowOpacity }]} />
+        <Animated.View style={[styles.carWrap, { transform: [{ translateY: carY }] }]}>
+          <View style={styles.carShadow} />
+          <View style={styles.carBody}>
+            <View style={styles.carCabin} />
+            <View style={styles.carLower} />
+            <View style={styles.carGlass} />
+            <View style={[styles.wheel, styles.wheelLeft]}>
+              <Animated.View style={[styles.wheelCore, { transform: [{ rotate: wheelRotate }] }]} />
+            </View>
+            <View style={[styles.wheel, styles.wheelRight]}>
+              <Animated.View style={[styles.wheelCore, { transform: [{ rotate: wheelRotate }] }]} />
+            </View>
+          </View>
         </Animated.View>
       </View>
-
-      <Text style={[styles.message, isDark ? styles.messageDark : styles.messageLight]}>{message}</Text>
     </View>
   );
 }
@@ -239,107 +208,190 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,
+    backgroundColor: "transparent",
   },
-  rootDark: { backgroundColor: "#081B26" },
-  rootLight: { backgroundColor: "#EAF3F9" },
-
   scene: {
     width: "100%",
-    maxWidth: 380,
-    height: 205,
-    justifyContent: "center",
-    marginBottom: 14,
+    maxWidth: 420,
+    height: 220,
+    overflow: "hidden",
+    backgroundColor: "transparent",
   },
-
-  roadGlow: {
-    position: "absolute",
-    left: "50%",
-    marginLeft: -150,
-    bottom: 38,
-    width: 300,
-    height: 96,
-    borderRadius: 999,
-  },
-  roadGlowDark: { backgroundColor: "#1D4C66" },
-  roadGlowLight: { backgroundColor: "#C3DBE8" },
-
-  road: {
-    position: "absolute",
-    left: "50%",
-    top: 14,
-    marginLeft: -150,
-    width: 300,
-    height: 158,
-    alignItems: "center",
-  },
-
-  roadBand: {
-    position: "absolute",
-    borderRadius: 12,
-  },
-  band1: { top: 2, width: 94, height: 13 },
-  band2: { top: 28, width: 132, height: 14 },
-  band3: { top: 56, width: 176, height: 16 },
-  band4: { top: 87, width: 226, height: 18 },
-  band5: { top: 122, width: 282, height: 20 },
-
-  roadDark: { backgroundColor: "#17394D" },
-  roadLight: { backgroundColor: "#C6DBE8" },
-
-  laneLayer: {
+  layer: {
     position: "absolute",
     left: 0,
     right: 0,
-    top: 8,
+    overflow: "hidden",
+  },
+  tile: {
+    position: "absolute",
+    top: 0,
+    width: TILE_WIDTH,
+    height: "100%",
+  },
+
+  farLayer: {
+    top: 26,
+    height: 84,
+  },
+  hill: {
+    position: "absolute",
     bottom: 0,
+    borderTopLeftRadius: 120,
+    borderTopRightRadius: 120,
+    backgroundColor: "#2B4E61",
+    opacity: 0.55,
+  },
+
+  midLayer: {
+    top: 72,
+    height: 62,
+  },
+  tree: {
+    position: "absolute",
+    bottom: 0,
+    width: 18,
+    height: 42,
+    alignItems: "center",
+  },
+  treeTop: {
+    width: 18,
+    height: 18,
+    borderRadius: 10,
+    backgroundColor: "#3A6A58",
+  },
+  treeTrunk: {
+    marginTop: 2,
+    width: 3,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: "#4B5C47",
+  },
+  sign: {
+    position: "absolute",
+    bottom: 0,
+    width: 16,
+    alignItems: "center",
+  },
+  signTop: {
+    width: 14,
+    height: 8,
+    borderRadius: 2,
+    backgroundColor: "#5D7484",
+  },
+  signPole: {
+    width: 2,
+    height: 18,
+    borderRadius: 2,
+    backgroundColor: "#6C8190",
+  },
+
+  roadArea: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 30,
+    height: 88,
+    justifyContent: "center",
+  },
+  road: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 20,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: "#2A3640",
+  },
+  textureLayer: {
+    top: 29,
+    height: 10,
+  },
+  textureStripe: {
+    position: "absolute",
+    height: 1,
+    borderRadius: 1,
+    backgroundColor: "#3D4B56",
+    opacity: 0.7,
+  },
+  centerDashLayer: {
+    top: 41,
+    height: 4,
   },
   centerDash: {
     position: "absolute",
-    left: "50%",
-    marginLeft: -4,
-    borderRadius: 4,
-  },
-  sideDash: {
-    position: "absolute",
-    height: 2,
+    width: 54,
+    height: 3,
     borderRadius: 2,
+    backgroundColor: "#9FC1D4",
+    opacity: 0.9,
   },
 
   carWrap: {
     position: "absolute",
     left: "50%",
-    marginLeft: -30,
-    bottom: 20,
+    marginLeft: -38,
+    bottom: 42,
+    width: 76,
     alignItems: "center",
   },
   carShadow: {
     position: "absolute",
-    bottom: -7,
-    width: 66,
-    height: 13,
+    bottom: -4,
+    width: 58,
+    height: 10,
     borderRadius: 999,
+    backgroundColor: "#0D1318",
+    opacity: 0.35,
   },
-  carShadowDark: { backgroundColor: "#72C2EA" },
-  carShadowLight: { backgroundColor: "#78A9C4" },
-
-  headlight: {
+  carBody: {
+    width: 76,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  carCabin: {
     position: "absolute",
-    width: 7,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: "#C7EEFF",
-    bottom: 6,
+    top: 1,
+    width: 40,
+    height: 14,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    backgroundColor: "#D8E7F0",
   },
-  headlightLeft: { left: 16 },
-  headlightRight: { right: 16 },
-
-  message: {
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-    textAlign: "center",
+  carLower: {
+    width: 70,
+    height: 18,
+    borderRadius: 8,
+    backgroundColor: "#EEF4F8",
   },
-  messageDark: { color: "#A7C7D9" },
-  messageLight: { color: "#4A7588" },
+  carGlass: {
+    position: "absolute",
+    top: 4,
+    width: 28,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#9AB9CC",
+  },
+  wheel: {
+    position: "absolute",
+    bottom: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 12,
+    backgroundColor: "#1C252B",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  wheelLeft: { left: 14 },
+  wheelRight: { right: 14 },
+  wheelCore: {
+    width: 6,
+    height: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#9AA9B3",
+  },
 });
