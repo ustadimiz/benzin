@@ -2,212 +2,295 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-const PALETTE = {
-  bg: "#070D17",
-  panel: "#0D1626",
-  line: "#1D2A3F",
-  road: "#121D2F",
-  roadEdge: "#22324A",
-  lane: "#8FA7BE22",
-  textMain: "#E8F2FD",
-  textDim: "#8DA6BE",
-  accent: "#8CD4FF",
-  accentSoft: "#C7ECFF",
+const COLORS = {
+  bg: "#070F1D",
+  panel: "#0D1729",
+  panelSoft: "#111F36",
+  border: "#20324C",
+  ring: "#2A3E5D",
+  textMain: "#E8F5FF",
+  textMuted: "#8EAAC3",
+  cyan: "#7DD3FC",
+  cyanSoft: "#AEE9FF",
+  blueSoft: "#93C5FD",
 };
 
-const SCENES = [
-  { key: "fuel", icon: "gas-station", title: "Fuel station", subtitle: "Track every refill" },
-  { key: "garage", icon: "garage", title: "Garage", subtitle: "Manage maintenance tasks" },
-  { key: "analytics", icon: "chart-line", title: "Analytics", subtitle: "Understand vehicle trends" },
-  { key: "home", icon: "home-variant", title: "Home", subtitle: "Ready to continue" },
-];
+function useAnimatedLoop(value, duration, easing = Easing.inOut(Easing.cubic)) {
+  useEffect(() => {
+    value.setValue(0);
+    const loop = Animated.loop(
+      Animated.timing(value, {
+        toValue: 1,
+        duration,
+        easing,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [duration, easing, value]);
+}
 
-function JourneyCar({ suspension, wheelSpin }) {
+function Speedometer({ speed, wake, pulse }) {
+  const ticks = useMemo(() => new Array(40).fill(0), []);
+  const arcProgress = Math.min(Math.max((speed - 10) / 90, 0), 1);
+
   return (
-    <Animated.View style={[styles.carWrap, { transform: [{ translateY: suspension }] }]}>
-      <View style={styles.carShadow} />
-      <View style={styles.carCabin} />
-      <View style={styles.carBody}>
-        <View style={styles.carWindow} />
-        <View style={styles.carHighlight} />
-      </View>
+    <Animated.View
+      style={[
+        styles.speedCard,
+        {
+          opacity: wake,
+          transform: [
+            {
+              scale: wake.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.92, 1],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <View style={styles.speedRing}>
+        {ticks.map((_, idx) => {
+          const angle = -140 + idx * 7;
+          const active = idx <= Math.round(arcProgress * 30);
+          return (
+            <View
+              key={`tick-${idx}`}
+              style={[
+                styles.tick,
+                {
+                  transform: [{ rotate: `${angle}deg` }, { translateY: -72 }],
+                  backgroundColor: active ? COLORS.cyan : "#2A3B54",
+                  opacity: active ? 1 : 0.45,
+                },
+              ]}
+            />
+          );
+        })}
 
-      <Animated.View style={[styles.wheel, styles.wheelLeft, { transform: [{ rotate: wheelSpin }] }]}>
-        <View style={styles.wheelInner} />
-      </Animated.View>
-      <Animated.View style={[styles.wheel, styles.wheelRight, { transform: [{ rotate: wheelSpin }] }]}>
-        <View style={styles.wheelInner} />
-      </Animated.View>
+        <Animated.View style={[styles.ringGlow, { opacity: pulse }]} />
+
+        <View style={styles.speedCore}>
+          <Text style={styles.speedNumber}>{speed}</Text>
+          <Text style={styles.speedUnit}>km/h</Text>
+        </View>
+      </View>
     </Animated.View>
   );
 }
 
-function SceneCard({ icon, title, subtitle, status }) {
-  const isFuture = status === "future";
-  const isActive = status === "active";
-  const isPast = status === "past";
-
+function FuelGauge({ value, wake }) {
   return (
-    <View
+    <Animated.View
       style={[
-        styles.sceneCard,
-        isFuture && styles.sceneCardFuture,
-        isActive && styles.sceneCardActive,
-        isPast && styles.sceneCardPast,
+        styles.fuelCard,
+        {
+          opacity: wake,
+          transform: [
+            {
+              translateY: wake.interpolate({
+                inputRange: [0, 1],
+                outputRange: [8, 0],
+              }),
+            },
+          ],
+        },
       ]}
     >
-      <View style={[styles.sceneIconWrap, isActive && styles.sceneIconWrapActive]}>
-        <MaterialCommunityIcons
-          name={icon}
-          size={17}
-          color={isFuture ? "#66809A" : isActive ? PALETTE.accentSoft : "#A6D6F2"}
-        />
+      <Text style={styles.cardTitle}>Fuel</Text>
+      <View style={styles.fuelTrack}>
+        <View style={[styles.fuelFill, { width: `${value}%` }]} />
       </View>
-      <Text style={[styles.sceneTitle, isFuture && styles.sceneTitleFuture]}>{title}</Text>
-      <Text style={[styles.sceneSubtitle, isFuture && styles.sceneSubtitleFuture]}>{subtitle}</Text>
-    </View>
+      <Text style={styles.cardValue}>{value}%</Text>
+    </Animated.View>
   );
 }
 
-function getSceneStatus(progress, index) {
-  const segment = index * 0.25;
-  if (progress >= segment + 0.25) return "past";
-  if (progress >= segment) return "active";
-  return "future";
+function Odometer({ value, wake }) {
+  return (
+    <Animated.View
+      style={[
+        styles.odoCard,
+        {
+          opacity: wake,
+          transform: [
+            {
+              translateY: wake.interpolate({
+                inputRange: [0, 1],
+                outputRange: [10, 0],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <Text style={styles.cardTitle}>Odometer</Text>
+      <Text style={styles.odoValue}>{value.toString().padStart(6, "0")}</Text>
+      <Text style={styles.cardSub}>km</Text>
+    </Animated.View>
+  );
+}
+
+function GraphCard({ phase, wake }) {
+  const bars = [16, 20, 19, 24, 22, 27, 25, 31];
+  return (
+    <Animated.View
+      style={[
+        styles.graphCard,
+        {
+          opacity: wake,
+          transform: [
+            {
+              translateY: wake.interpolate({
+                inputRange: [0, 1],
+                outputRange: [10, 0],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <Text style={styles.cardTitle}>Statistics</Text>
+      <View style={styles.graphRow}>
+        {bars.map((h, idx) => {
+          const active = idx <= Math.floor(phase * (bars.length - 1));
+          return (
+            <View
+              key={`bar-${idx}`}
+              style={[
+                styles.graphBar,
+                {
+                  height: h,
+                  opacity: active ? 0.95 : 0.45,
+                  backgroundColor: active ? COLORS.cyanSoft : "#2A3A52",
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
+    </Animated.View>
+  );
+}
+
+function StatusIcons({ pulse, wake }) {
+  return (
+    <Animated.View
+      style={[
+        styles.statusCard,
+        {
+          opacity: wake,
+          transform: [
+            {
+              translateY: wake.interpolate({
+                inputRange: [0, 1],
+                outputRange: [10, 0],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <Text style={styles.cardTitle}>System</Text>
+      <View style={styles.iconRow}>
+        <Animated.View style={[styles.iconChip, { opacity: pulse }]}> 
+          <MaterialCommunityIcons name="oil" size={14} color={COLORS.cyan} />
+        </Animated.View>
+        <Animated.View style={[styles.iconChip, { opacity: pulse }]}> 
+          <MaterialCommunityIcons name="wrench" size={14} color={COLORS.blueSoft} />
+        </Animated.View>
+        <Animated.View style={[styles.iconChip, { opacity: pulse }]}> 
+          <MaterialCommunityIcons name="engine-outline" size={14} color={COLORS.cyanSoft} />
+        </Animated.View>
+      </View>
+    </Animated.View>
+  );
 }
 
 export default function DrivingLogoLoader() {
-  const progress = useRef(new Animated.Value(0)).current;
-  const laneFlow = useRef(new Animated.Value(0)).current;
-  const wheel = useRef(new Animated.Value(0)).current;
-  const body = useRef(new Animated.Value(0)).current;
-  const camera = useRef(new Animated.Value(0)).current;
-  const glow = useRef(new Animated.Value(0)).current;
+  const assemble = useRef(new Animated.Value(0)).current;
+  const speedLoop = useRef(new Animated.Value(0)).current;
+  const graphLoop = useRef(new Animated.Value(0)).current;
+  const pulseLoop = useRef(new Animated.Value(0)).current;
+  const morphLoop = useRef(new Animated.Value(0)).current;
 
-  const [progressValue, setProgressValue] = useState(0);
+  const [speed, setSpeed] = useState(18);
+  const [fuel, setFuel] = useState(24);
+  const [odo, setOdo] = useState(124380);
+  const [graphPhase, setGraphPhase] = useState(0.1);
 
-  const sceneCenters = useMemo(() => [0.17, 0.4, 0.63, 0.86], []);
-
-  useEffect(() => {
-    progress.setValue(0);
-    const run = Animated.loop(
-      Animated.sequence([
-        Animated.timing(progress, {
-          toValue: 1,
-          duration: 9800,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.delay(200),
-        Animated.timing(progress, {
-          toValue: 0,
-          duration: 500,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    run.start();
-    return () => run.stop();
-  }, [progress]);
+  useAnimatedLoop(speedLoop, 4600, Easing.inOut(Easing.quad));
+  useAnimatedLoop(graphLoop, 3600, Easing.inOut(Easing.cubic));
+  useAnimatedLoop(pulseLoop, 2200, Easing.inOut(Easing.sin));
+  useAnimatedLoop(morphLoop, 5600, Easing.inOut(Easing.quad));
 
   useEffect(() => {
-    laneFlow.setValue(0);
-    const loop = Animated.loop(
-      Animated.timing(laneFlow, {
+    assemble.setValue(0);
+    const intro = Animated.sequence([
+      Animated.delay(120),
+      Animated.timing(assemble, {
         toValue: 1,
-        duration: 1650,
-        easing: Easing.linear,
+        duration: 1100,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-      })
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [laneFlow]);
+      }),
+    ]);
+    intro.start();
+    return () => intro.stop();
+  }, [assemble]);
 
   useEffect(() => {
-    wheel.setValue(0);
-    const loop = Animated.loop(
-      Animated.timing(wheel, {
-        toValue: 1,
-        duration: 950,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [wheel]);
+    const speedId = speedLoop.addListener(({ value }) => {
+      const wave = value < 0.5 ? value / 0.5 : 1 - (value - 0.5) / 0.5;
+      setSpeed(Math.round(18 + wave * 48));
+      setFuel(Math.round(24 + value * 16));
+    });
+
+    const graphId = graphLoop.addListener(({ value }) => {
+      setGraphPhase(value);
+    });
+
+    return () => {
+      speedLoop.removeListener(speedId);
+      graphLoop.removeListener(graphId);
+    };
+  }, [graphLoop, speedLoop]);
 
   useEffect(() => {
-    body.setValue(0);
-    const loop = Animated.loop(
-      Animated.timing(body, {
-        toValue: 1,
-        duration: 1800,
-        easing: Easing.inOut(Easing.sin),
-        useNativeDriver: true,
-      })
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [body]);
+    const timer = setInterval(() => {
+      setOdo((prev) => (prev >= 124980 ? 124380 : prev + 1));
+    }, 85);
+    return () => clearInterval(timer);
+  }, []);
 
-  useEffect(() => {
-    camera.setValue(0);
-    const loop = Animated.loop(
-      Animated.timing(camera, {
-        toValue: 1,
-        duration: 4200,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: true,
-      })
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [camera]);
-
-  useEffect(() => {
-    glow.setValue(0);
-    const loop = Animated.loop(
-      Animated.timing(glow, {
-        toValue: 1,
-        duration: 2600,
-        easing: Easing.inOut(Easing.sin),
-        useNativeDriver: true,
-      })
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [glow]);
-
-  useEffect(() => {
-    const id = progress.addListener(({ value }) => setProgressValue(value));
-    return () => progress.removeListener(id);
-  }, [progress]);
-
-  const laneShiftA = laneFlow.interpolate({ inputRange: [0, 1], outputRange: [0, -56] });
-  const laneShiftB = laneFlow.interpolate({ inputRange: [0, 1], outputRange: [56, 0] });
-
-  const wheelSpin = wheel.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
-
-  const suspension = body.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, -1.8, 0] });
-
-  const cameraX = camera.interpolate({ inputRange: [0, 0.5, 1], outputRange: [-2, 2, -2] });
-  const cameraScale = camera.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.006, 1] });
-
-  const ambientOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.3] });
-
-  const storyTrackTranslate = progress.interpolate({ inputRange: [0, 1], outputRange: [70, -250] });
-
-  const destinationMorphOpacity = progress.interpolate({
-    inputRange: [0, 0.85, 1],
-    outputRange: [0, 0, 0.42],
+  const iconPulse = pulseLoop.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.5, 1],
   });
-  const destinationMorphScale = progress.interpolate({
-    inputRange: [0, 0.85, 1],
-    outputRange: [1, 1, 1.08],
+
+  const speedWake = assemble.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0.8, 1],
   });
+  const panelWake = assemble.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+
+  const panelY = assemble.interpolate({ inputRange: [0, 1], outputRange: [18, 0] });
+  const panelScale = morphLoop.interpolate({ inputRange: [0, 0.82, 1], outputRange: [1, 1, 1.018] });
+
+  const overlayOpacity = morphLoop.interpolate({
+    inputRange: [0, 0.86, 1],
+    outputRange: [0, 0, 0.38],
+  });
+
+  const overlayScale = morphLoop.interpolate({
+    inputRange: [0, 0.86, 1],
+    outputRange: [1, 1, 1.06],
+  });
+
+  const ambientOpacity = pulseLoop.interpolate({ inputRange: [0, 1], outputRange: [0.14, 0.3] });
 
   return (
     <View style={styles.root}>
@@ -215,72 +298,35 @@ export default function DrivingLogoLoader() {
       <View style={styles.vignetteBottom} />
       <Animated.View style={[styles.ambientGlow, { opacity: ambientOpacity }]} />
 
-      <Animated.View style={[styles.stage, { transform: [{ translateX: cameraX }, { scale: cameraScale }] }]}>
-        <View style={styles.skyLayer} />
+      <Animated.View
+        style={[
+          styles.dashboard,
+          {
+            opacity: panelWake,
+            transform: [{ translateY: panelY }, { scale: panelScale }],
+          },
+        ]}
+      >
+        <View style={styles.gridLayer} />
 
-        <View style={styles.storyViewport}>
-          <Animated.View style={[styles.storyTrack, { transform: [{ translateX: storyTrackTranslate }] }]}>
-            {SCENES.map((scene, idx) => {
-              const status = getSceneStatus(progressValue, idx);
-              return (
-                <SceneCard
-                  key={scene.key}
-                  icon={scene.icon}
-                  title={scene.title}
-                  subtitle={scene.subtitle}
-                  status={status}
-                />
-              );
-            })}
-          </Animated.View>
+        <View style={styles.topRow}>
+          <Speedometer speed={speed} wake={speedWake} pulse={iconPulse} />
+          <View style={styles.topSide}>
+            <FuelGauge value={fuel} wake={panelWake} />
+            <GraphCard phase={graphPhase} wake={panelWake} />
+          </View>
         </View>
 
-        <View style={styles.road}>
-          <View style={styles.roadEdgeTop} />
-          <View style={styles.roadEdgeBottom} />
-
-          <View style={styles.laneViewport}>
-            <Animated.View style={[styles.laneTrack, { transform: [{ translateX: laneShiftA }] }]}>
-              <View style={styles.laneMark} />
-              <View style={styles.laneMark} />
-              <View style={styles.laneMark} />
-              <View style={styles.laneMark} />
-              <View style={styles.laneMark} />
-              <View style={styles.laneMark} />
-            </Animated.View>
-
-            <Animated.View style={[styles.laneTrack, styles.laneTrackSoft, { transform: [{ translateX: laneShiftB }] }]}>
-              <View style={styles.laneMarkSoft} />
-              <View style={styles.laneMarkSoft} />
-              <View style={styles.laneMarkSoft} />
-              <View style={styles.laneMarkSoft} />
-              <View style={styles.laneMarkSoft} />
-              <View style={styles.laneMarkSoft} />
-            </Animated.View>
-          </View>
-
-          <View style={styles.carAnchor}>
-            <JourneyCar suspension={suspension} wheelSpin={wheelSpin} />
-          </View>
-
-          <View style={styles.sceneDotRow}>
-            {sceneCenters.map((stop, idx) => {
-              const reached = progressValue >= stop;
-              return <View key={`dot-${idx}`} style={[styles.sceneDot, reached && styles.sceneDotReached]} />;
-            })}
-          </View>
+        <View style={styles.bottomRow}>
+          <Odometer value={odo} wake={panelWake} />
+          <StatusIcons pulse={iconPulse} wake={panelWake} />
         </View>
       </Animated.View>
 
-      <Animated.View
-        style={[
-          styles.destinationOverlay,
-          { opacity: destinationMorphOpacity, transform: [{ scale: destinationMorphScale }] },
-        ]}
-      >
-        <View style={styles.destinationCard}>
-          <MaterialCommunityIcons name="home-variant" size={18} color={PALETTE.accentSoft} />
-          <Text style={styles.destinationText}>Opening your workspace</Text>
+      <Animated.View style={[styles.destinationOverlay, { opacity: overlayOpacity, transform: [{ scale: overlayScale }] }]}>
+        <View style={styles.destinationBadge}>
+          <MaterialCommunityIcons name="view-dashboard-outline" size={16} color={COLORS.cyanSoft} />
+          <Text style={styles.destinationText}>Opening dashboard</Text>
         </View>
       </Animated.View>
     </View>
@@ -290,10 +336,10 @@ export default function DrivingLogoLoader() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: PALETTE.bg,
+    backgroundColor: COLORS.bg,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     overflow: "hidden",
   },
   vignetteTop: {
@@ -301,293 +347,219 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 220,
-    backgroundColor: "#0C15221F",
+    height: 230,
+    backgroundColor: "#0D1B2A1C",
   },
   vignetteBottom: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: 220,
-    backgroundColor: "#00000024",
+    height: 230,
+    backgroundColor: "#0000002B",
   },
   ambientGlow: {
     position: "absolute",
     width: 340,
     height: 340,
     borderRadius: 170,
-    backgroundColor: "#67B7FF14",
+    backgroundColor: "#4CC9F01A",
   },
 
-  stage: {
+  dashboard: {
     width: "100%",
-    maxWidth: 460,
-    borderRadius: 24,
+    maxWidth: 430,
+    borderRadius: 22,
+    backgroundColor: COLORS.panel,
     borderWidth: 1,
-    borderColor: PALETTE.line,
-    backgroundColor: PALETTE.panel,
-    paddingHorizontal: 14,
-    paddingVertical: 16,
+    borderColor: COLORS.border,
+    padding: 12,
     overflow: "hidden",
   },
-  skyLayer: {
+  gridLayer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#0F1C2F",
-    opacity: 0.55,
+    backgroundColor: COLORS.panelSoft,
+    opacity: 0.5,
   },
 
-  storyViewport: {
-    height: 84,
+  topRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  topSide: {
+    flex: 1,
+    gap: 10,
+  },
+
+  speedCard: {
+    width: 182,
+    height: 144,
+    borderRadius: 16,
+    backgroundColor: "#0C1626",
+    borderWidth: 1,
+    borderColor: "#22344D",
+    alignItems: "center",
+    justifyContent: "center",
     overflow: "hidden",
-    marginBottom: 12,
+  },
+  speedRing: {
+    width: 154,
+    height: 154,
+    alignItems: "center",
     justifyContent: "center",
   },
-  storyTrack: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 14,
+  tick: {
+    position: "absolute",
+    width: 4,
+    height: 10,
+    borderRadius: 2,
   },
-  sceneCard: {
-    width: 148,
-    height: 72,
+  ringGlow: {
+    position: "absolute",
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: "#67E8F920",
+  },
+  speedCore: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 1,
+    borderColor: COLORS.ring,
+    backgroundColor: "#0C1A2D",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  speedNumber: {
+    color: COLORS.textMain,
+    fontSize: 25,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  speedUnit: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    marginTop: 2,
+  },
+
+  fuelCard: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#2D4260",
-    backgroundColor: "#112139",
-    padding: 9,
-    justifyContent: "space-between",
+    borderColor: "#22344D",
+    backgroundColor: "#0C1626",
+    padding: 10,
   },
-  sceneCardFuture: {
-    backgroundColor: "#0F1A2B",
-    borderColor: "#243750",
-    opacity: 0.56,
+  cardTitle: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontWeight: "600",
+    marginBottom: 8,
   },
-  sceneCardActive: {
-    borderColor: "#5AA7D9",
-    backgroundColor: "#16304E",
-    shadowColor: "#7DD3FC",
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-    opacity: 1,
+  fuelTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#1C2C44",
+    overflow: "hidden",
   },
-  sceneCardPast: {
-    backgroundColor: "#0E1F33",
-    borderColor: "#355577",
-    opacity: 0.36,
+  fuelFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: COLORS.cyan,
   },
-  sceneIconWrap: {
+  cardValue: {
+    marginTop: 8,
+    color: COLORS.textMain,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
+  graphCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#22344D",
+    backgroundColor: "#0C1626",
+    padding: 10,
+  },
+  graphRow: {
+    height: 42,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  graphBar: {
+    flex: 1,
+    borderRadius: 3,
+  },
+
+  bottomRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 10,
+  },
+  odoCard: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#22344D",
+    backgroundColor: "#0C1626",
+    padding: 10,
+  },
+  odoValue: {
+    marginTop: 2,
+    color: COLORS.textMain,
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 1.8,
+  },
+  cardSub: {
+    marginTop: 2,
+    color: COLORS.textMuted,
+    fontSize: 11,
+  },
+
+  statusCard: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#22344D",
+    backgroundColor: "#0C1626",
+    padding: 10,
+  },
+  iconRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  iconChip: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#17283E",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#2C415D",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sceneIconWrapActive: {
-    backgroundColor: "#1A3B5E",
-    borderColor: "#67B7EB",
-  },
-  sceneTitle: {
-    color: PALETTE.textMain,
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.2,
-  },
-  sceneTitleFuture: {
-    color: "#8CA4BC",
-  },
-  sceneSubtitle: {
-    color: PALETTE.textDim,
-    fontSize: 10,
-  },
-  sceneSubtitleFuture: {
-    color: "#6E869E",
-  },
-
-  road: {
-    height: 80,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: PALETTE.roadEdge,
-    backgroundColor: PALETTE.road,
-    overflow: "hidden",
-    justifyContent: "center",
-  },
-  roadEdgeTop: {
-    position: "absolute",
-    top: 0,
-    left: 18,
-    right: 18,
-    height: 1,
-    backgroundColor: "#A0B4C414",
-  },
-  roadEdgeBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 18,
-    right: 18,
-    height: 1,
-    backgroundColor: "#A0B4C40F",
-  },
-
-  laneViewport: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  laneTrack: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    alignItems: "center",
-    paddingHorizontal: 14,
-  },
-  laneTrackSoft: {
-    opacity: 0.72,
-  },
-  laneMark: {
-    width: 24,
-    height: 2,
-    borderRadius: 999,
-    backgroundColor: PALETTE.lane,
-  },
-  laneMarkSoft: {
-    width: 24,
-    height: 1,
-    borderRadius: 999,
-    backgroundColor: "#9FB4C614",
-  },
-
-  carAnchor: {
-    position: "absolute",
-    left: "50%",
-    marginLeft: -22,
-    top: 26,
-  },
-  carWrap: {
-    width: 44,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  carShadow: {
-    position: "absolute",
-    bottom: 0,
-    width: 30,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: "#06111D9A",
-  },
-  carCabin: {
-    width: 18,
-    height: 7,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    backgroundColor: "#A8C0D4",
-    marginBottom: -2,
-    opacity: 0.92,
-  },
-  carBody: {
-    width: 42,
-    height: 13,
-    borderRadius: 7,
-    backgroundColor: "#D9E7F3",
-    borderWidth: 1,
-    borderColor: "#B7CBDB",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  carWindow: {
-    width: 12,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#8DAFC5",
-    opacity: 0.82,
-  },
-  carHighlight: {
-    position: "absolute",
-    top: 1,
-    left: 5,
-    right: 5,
-    height: 1,
-    backgroundColor: "#FFFFFF52",
-  },
-  wheel: {
-    position: "absolute",
-    bottom: 0,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: "#1C2738",
-    borderWidth: 1,
-    borderColor: "#4B637B",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  wheelInner: {
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: "#7C91A8",
-  },
-  wheelLeft: {
-    left: 8,
-  },
-  wheelRight: {
-    right: 8,
-  },
-
-  sceneDotRow: {
-    position: "absolute",
-    left: 18,
-    right: 18,
-    bottom: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sceneDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: "#5E748C",
-    opacity: 0.42,
-  },
-  sceneDotReached: {
-    backgroundColor: "#A9E4FF",
-    opacity: 0.95,
+    borderColor: "#2F4E72",
+    backgroundColor: "#10213A",
   },
 
   destinationOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#07111F96",
+    backgroundColor: "#07112099",
   },
-  destinationCard: {
+  destinationBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    borderWidth: 1,
+    borderColor: "#2F567C",
+    backgroundColor: "#10243D",
+    borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#2B4F72",
-    backgroundColor: "#10263E",
   },
   destinationText: {
-    color: "#D7EDFD",
+    color: "#D8EEFF",
     fontSize: 12,
     fontWeight: "600",
   },

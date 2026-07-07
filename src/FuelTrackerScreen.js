@@ -35,7 +35,7 @@ const columnWidths = {
   actions: 70,
 };
 const tableMinWidth = Object.values(columnWidths).reduce((sum, n) => sum + n, 0);
-const MIN_INITIAL_LOADER_MS = 900;
+const MIN_INITIAL_LOADER_MS = 2200;
 
 function parseNumber(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
