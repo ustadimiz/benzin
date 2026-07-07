@@ -19,6 +19,14 @@ const STORAGE_NOTIFICATIONS = "@settings_notifications";
 const STORAGE_LANGUAGE = "@settings_language";
 const RATE_APP_URL = "https://play.google.com/store/apps/details?id=com.aracdefterim.app";
 const STARTUP_AUTH_TIMEOUT_MS = 7000;
+const DEFAULT_TAB = "prices";
+const TAB_KEYS = new Set(["prices", "tracker", "maintenance", "stats"]);
+
+function getInitialTab() {
+  if (Platform.OS !== "web" || typeof window === "undefined") return DEFAULT_TAB;
+  const hash = window.location.hash.replace(/^#/, "").trim();
+  return TAB_KEYS.has(hash) ? hash : DEFAULT_TAB;
+}
 
 function withTimeout(promise, timeoutMs, fallbackValue = null) {
   return Promise.race([
@@ -33,7 +41,7 @@ function withTimeout(promise, timeoutMs, fallbackValue = null) {
 injectWebStyles();
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("prices");
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [showSplash, setShowSplash] = useState(true);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -99,6 +107,27 @@ export default function App() {
     const root = document.getElementById("root");
     if (root) root.style.backgroundColor = bg;
   }, [theme.safeBg]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+
+    const syncTabFromHash = () => {
+      const nextTab = getInitialTab();
+      setActiveTab((current) => (current === nextTab ? current : nextTab));
+    };
+
+    syncTabFromHash();
+    window.addEventListener("hashchange", syncTabFromHash);
+    return () => window.removeEventListener("hashchange", syncTabFromHash);
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+    const wantedHash = `#${activeTab}`;
+    if (window.location.hash !== wantedHash) {
+      window.history.replaceState(null, "", wantedHash);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 1500);
