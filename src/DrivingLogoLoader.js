@@ -23,7 +23,8 @@ function Layer({ x1, x2, style, children }) {
   );
 }
 
-export default function DrivingLogoLoader() {
+export default function DrivingLogoLoader({ themeMode = "dark" }) {
+  const isDark = themeMode === "dark";
   const farFlow = useRef(new Animated.Value(0)).current;
   const midFlow = useRef(new Animated.Value(0)).current;
   const nearFlow = useRef(new Animated.Value(0)).current;
@@ -134,9 +135,9 @@ export default function DrivingLogoLoader() {
   });
 
   return (
-    <View style={styles.root}>
-      <View style={styles.scene}>
-        <View style={styles.skyBand} />
+    <View style={[styles.root, isDark ? styles.rootDark : styles.rootLight]}>
+      <View style={[styles.scene, isDark ? styles.sceneDark : styles.sceneLight]}>
+        <View style={[styles.skyBand, isDark ? styles.skyBandDark : styles.skyBandLight]} />
 
         <Layer style={[styles.layer, styles.farLayer]} x1={far.first} x2={far.second}>
           <View style={[styles.hill, { left: 20, width: 170, height: 74 }]} />
@@ -191,7 +192,7 @@ export default function DrivingLogoLoader() {
 
         <Animated.View style={[styles.carWrap, { transform: [{ translateY: carY }] }]}>
           <View style={styles.carShadow} />
-          <MaterialCommunityIcons name="car-sports" size={56} color="#EEF7FF" />
+          <MaterialCommunityIcons name="car-sports" size={56} color={isDark ? "#11171D" : "#EEF7FF"} />
           <View style={[styles.wheel, styles.wheelLeft]}>
             <Animated.View style={[styles.wheelCore, { transform: [{ rotate: wheelRotate }] }]} />
           </View>
@@ -209,24 +210,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent",
   },
+  rootDark: { backgroundColor: "#071722" },
+  rootLight: { backgroundColor: "#EAF3F9" },
   scene: {
     width: "100%",
-    maxWidth: 520,
-    height: 230,
+    maxWidth: 9999,
+    height: "100%",
+    minHeight: 260,
     overflow: "hidden",
-    backgroundColor: "transparent",
   },
+  sceneDark: { backgroundColor: "#071722" },
+  sceneLight: { backgroundColor: "#EAF3F9" },
   skyBand: {
     position: "absolute",
     left: 0,
     right: 0,
     top: 0,
-    height: 112,
-    backgroundColor: "#173A4D",
-    opacity: 0.4,
+    height: 160,
   },
+  skyBandDark: { backgroundColor: "#123547", opacity: 0.82 },
+  skyBandLight: { backgroundColor: "#BFD9EA", opacity: 0.92 },
   layer: {
     position: "absolute",
     left: 0,
@@ -241,21 +245,21 @@ const styles = StyleSheet.create({
   },
 
   farLayer: {
-    top: 26,
-    height: 84,
+    top: 72,
+    height: 98,
   },
   hill: {
     position: "absolute",
     bottom: 0,
     borderTopLeftRadius: 120,
     borderTopRightRadius: 120,
-    backgroundColor: "#4C7A90",
-    opacity: 0.65,
+    backgroundColor: "#3E6E87",
+    opacity: 0.92,
   },
 
   midLayer: {
-    top: 72,
-    height: 62,
+    top: 130,
+    height: 72,
   },
   tree: {
     position: "absolute",
@@ -268,14 +272,14 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 10,
-    backgroundColor: "#67A08A",
+    backgroundColor: "#79B59E",
   },
   treeTrunk: {
     marginTop: 2,
     width: 3,
     height: 20,
     borderRadius: 2,
-    backgroundColor: "#72866D",
+    backgroundColor: "#8EA083",
   },
   sign: {
     position: "absolute",
@@ -287,79 +291,79 @@ const styles = StyleSheet.create({
     width: 14,
     height: 8,
     borderRadius: 2,
-    backgroundColor: "#9FB8C7",
+    backgroundColor: "#D2E7F2",
   },
   signPole: {
     width: 2,
     height: 18,
     borderRadius: 2,
-    backgroundColor: "#9BB0BD",
+    backgroundColor: "#C5D7E1",
   },
 
   roadArea: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 24,
-    height: 88,
+    bottom: 70,
+    height: 100,
     justifyContent: "center",
   },
   road: {
     position: "absolute",
     left: 0,
     right: 0,
-    top: 20,
-    height: 46,
+    top: 22,
+    height: 54,
     borderRadius: 10,
-    backgroundColor: "#38444F",
+    backgroundColor: "#3B4956",
   },
   roadEdgeTop: {
     position: "absolute",
     left: 0,
     right: 0,
-    top: 20,
+    top: 22,
     height: 2,
-    backgroundColor: "#73818D",
-    opacity: 0.6,
+    backgroundColor: "#9CB2C0",
+    opacity: 0.9,
   },
   roadEdgeBottom: {
     position: "absolute",
     left: 0,
     right: 0,
-    top: 64,
+    top: 74,
     height: 2,
-    backgroundColor: "#73818D",
-    opacity: 0.35,
+    backgroundColor: "#8398A6",
+    opacity: 0.65,
   },
   textureLayer: {
-    top: 29,
+    top: 34,
     height: 10,
   },
   textureStripe: {
     position: "absolute",
     height: 1,
     borderRadius: 1,
-    backgroundColor: "#5A6872",
-    opacity: 0.7,
+    backgroundColor: "#738592",
+    opacity: 0.92,
   },
   centerDashLayer: {
-    top: 41,
-    height: 4,
+    top: 47,
+    height: 5,
   },
   centerDash: {
     position: "absolute",
     width: 54,
-    height: 3,
+    height: 4,
     borderRadius: 2,
-    backgroundColor: "#D0E8F7",
-    opacity: 0.95,
+    backgroundColor: "#ECF7FF",
+    opacity: 1,
   },
 
   carWrap: {
     position: "absolute",
     left: "50%",
     marginLeft: -34,
-    bottom: 44,
+    bottom: 88,
     width: 68,
     alignItems: "center",
   },
@@ -369,8 +373,8 @@ const styles = StyleSheet.create({
     width: 62,
     height: 12,
     borderRadius: 999,
-    backgroundColor: "#10161B",
-    opacity: 0.42,
+    backgroundColor: "#020507",
+    opacity: 0.62,
   },
   wheel: {
     position: "absolute",
@@ -378,7 +382,7 @@ const styles = StyleSheet.create({
     width: 13,
     height: 13,
     borderRadius: 13,
-    backgroundColor: "#1C252B",
+    backgroundColor: "#0C1115",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -389,6 +393,6 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#9AA9B3",
+    borderColor: "#D5E4EC",
   },
 });
