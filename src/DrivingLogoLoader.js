@@ -191,7 +191,7 @@ export default function DrivingLogoLoader({ themeMode = "dark" }) {
         </View>
 
         <Animated.View style={[styles.carWrap, { transform: [{ translateY: carY }] }]}>
-          <View style={styles.carShadow} />
+          <View style={[styles.carShadow, isDark ? styles.carShadowDark : styles.carShadowLight]} />
           <MaterialCommunityIcons name="car-sports" size={56} color={isDark ? "#11171D" : "#EEF7FF"} />
           <View style={[styles.wheel, styles.wheelLeft]}>
             <Animated.View style={[styles.wheelCore, { transform: [{ rotate: wheelRotate }] }]} />
@@ -374,9 +374,9 @@ const styles = StyleSheet.create({
     width: 62,
     height: 12,
     borderRadius: 999,
-    backgroundColor: "#020507",
-    opacity: 0.62,
   },
+  carShadowDark: { backgroundColor: "#020507", opacity: 0.62 },
+  carShadowLight: { backgroundColor: "#95A9B7", opacity: 0.44 },
   wheel: {
     position: "absolute",
     bottom: 1,

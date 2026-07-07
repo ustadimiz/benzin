@@ -29,7 +29,7 @@ const columnWidths = {
   actions: 70,
 };
 const tableMinWidth = Object.values(columnWidths).reduce((sum, n) => sum + n, 0);
-const MIN_INITIAL_LOADER_MS = 1800;
+const MIN_INITIAL_LOADER_MS = 2400;
 
 function formatDateTR(date) {
   return date.toLocaleDateString("tr-TR");
@@ -170,7 +170,6 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
   }, [windowWidth]);
 
   const loadData = async () => {
-    const startedAt = Date.now();
     try {
       const [fuelResult, maintenanceResult] = await Promise.allSettled([
         loadFuelState(userId),
@@ -190,15 +189,25 @@ export default function MaintenanceScreen({ lang = "tr", userId = "default", the
         setEntries(nextMaintenanceData.entries || []);
       }
     } catch (_) {
-    } finally {
-      const elapsed = Date.now() - startedAt;
-      const waitMs = Math.max(0, MIN_INITIAL_LOADER_MS - elapsed);
-      setTimeout(() => setIsInitialLoading(false), waitMs);
     }
   };
 
   useEffect(() => {
-    loadData();
+    let mounted = true;
+
+    const bootstrap = async () => {
+      setIsInitialLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, MIN_INITIAL_LOADER_MS));
+      if (!mounted) return;
+      await loadData();
+      if (mounted) setIsInitialLoading(false);
+    };
+
+    bootstrap();
+
+    return () => {
+      mounted = false;
+    };
   }, [userId]);
 
   useEffect(() => {
