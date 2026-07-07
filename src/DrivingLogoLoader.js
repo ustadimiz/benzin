@@ -14,7 +14,7 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
     const roadFlowLoop = Animated.loop(
       Animated.timing(roadFlowAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 820,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -57,35 +57,60 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
     const wheelLoop = Animated.loop(
       Animated.timing(wheelAnim, {
         toValue: 1,
-        duration: 500,
+        duration: 520,
         easing: Easing.linear,
         useNativeDriver: true,
       })
+    );
+
+    const glowLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 620,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 620,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    roadFlowAnim.setValue(0);
+    bobAnim.setValue(0);
+    swayAnim.setValue(0);
+    wheelAnim.setValue(0);
+    glowAnim.setValue(0);
+
     roadFlowLoop.start();
     bobLoop.start();
     swayLoop.start();
     wheelLoop.start();
-    const glowLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
+    glowLoop.start();
+
+    return () => {
       roadFlowLoop.stop();
       bobLoop.stop();
       swayLoop.stop();
       wheelLoop.stop();
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
+      glowLoop.stop();
+    };
   }, [bobAnim, glowAnim, roadFlowAnim, swayAnim, wheelAnim]);
-        Animated.timing(glowAnim, {
+
   const laneTranslateY = roadFlowAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [-42, 58],
-          useNativeDriver: true,
-        }),
+  });
+
   const carTranslateY = bobAnim.interpolate({
-    );
+    inputRange: [0, 1],
     outputRange: [0, -5],
-    approachLoop.start();
-    laneLoop.start();
+  });
+
   const carTranslateX = swayAnim.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: [-2, 2, -2],
@@ -94,10 +119,10 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
   const carTilt = swayAnim.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: ["-1.5deg", "1.5deg", "-1.5deg"],
-      approachLoop.stop();
-      laneLoop.stop();
-      glowLoop.stop();
-    };
+  });
+
+  const carGlowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
     outputRange: [0.26, 0.72],
   });
 
@@ -135,84 +160,25 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
 
   const laneDashColor = isDark ? "#8FD5FB" : "#4F7D97";
   const sideDashColor = isDark ? "#3A708C" : "#8FB3C8";
-  const wheelColor = isDark ? "#D8EEF9" : "#355364";
+  const wheelCoreColor = isDark ? "#D8EEF9" : "#355364";
 
   const Wheel = ({ style }) => (
-    <Animated.View style={[styles.wheel, style, { transform: [{ rotate: wheelRotate }, { scale: wheelPulse }] }]}>
-      <View style={[styles.wheelCore, { backgroundColor: wheelColor }]} />
+    <Animated.View
+      style={[
+        styles.wheel,
+        style,
+        {
+          transform: [{ rotate: wheelRotate }, { scale: wheelPulse }],
+        },
+      ]}
+    >
+      <View style={[styles.wheelCore, { backgroundColor: wheelCoreColor }]} />
     </Animated.View>
   );
 
-  const CarIcon = (
-    <MaterialCommunityIcons
-      name="car-sports"
-      size={52}
-      color={isDark ? "#EAF7FF" : "#2D4553"}
-    />
-  );
-
-  const RoadBands = [1, 2, 3, 4, 5, 6].map((idx) => (
-    <View
-      key={`band-${idx}`}
-      style={[
-        styles.roadBand,
-        styles[`roadBand${idx}`],
-        isDark ? styles.roadDark : styles.roadLight,
-      ]}
-    />
-  ));
-
-  const CenterDashes = laneMeta.map((meta, idx) => (
-    <Animated.View
-      key={`center-${idx}`}
-      style={[
-        styles.centerDash,
-        {
-          top: meta.top,
-          width: meta.width,
-          height: meta.height,
-          backgroundColor: laneDashColor,
-          transform: [{ translateY: laneTranslateY }],
-          opacity: 0.94 - idx * 0.09,
-        },
-      ]}
-    />
-  ));
-
-  const SideDashes = sideMeta.flatMap((meta, idx) => ([
-    <Animated.View
-      key={`left-${idx}`}
-      style={[
-        styles.sideDash,
-        {
-          top: meta.top,
-          width: meta.width,
-          left: 44 - idx * 2,
-          backgroundColor: sideDashColor,
-          transform: [{ translateY: laneTranslateY }],
-          opacity: 0.8 - idx * 0.1,
-        },
-      ]}
-    />,
-    <Animated.View
-      key={`right-${idx}`}
-      style={[
-        styles.sideDash,
-        {
-          top: meta.top,
-          width: meta.width,
-          right: 44 - idx * 2,
-          backgroundColor: sideDashColor,
-          transform: [{ translateY: laneTranslateY }],
-          opacity: 0.8 - idx * 0.1,
-        },
-      ]}
-    />,
-  ]));
-
-  const carScale = approachAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.84, 1.12],
+  return (
+    <View style={[styles.root, isDark ? styles.rootDark : styles.rootLight]}>
+      <View style={styles.sceneWrap}>
         <Animated.View
           style={[
             styles.roadGlow,
@@ -221,20 +187,6 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
           ]}
         />
 
-  });
-          {RoadBands}
-
-          <View style={styles.laneLayer}>
-            {CenterDashes}
-            {SideDashes}
-          </View>
-    inputRange: [0, 1],
-    outputRange: [0.25, 0.65],
-  });
-
-  return (
-    <View style={[styles.root, isDark ? styles.rootDark : styles.rootLight]}>
-              transform: [{ translateX: carTranslateX }, { translateY: carTranslateY }, { rotate: carTilt }],
         <View style={styles.horizonWrap}>
           <View style={[styles.roadBand, styles.roadBand1, isDark ? styles.roadDark : styles.roadLight]} />
           <View style={[styles.roadBand, styles.roadBand2, isDark ? styles.roadDark : styles.roadLight]} />
@@ -243,18 +195,65 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
           <View style={[styles.roadBand, styles.roadBand5, isDark ? styles.roadDark : styles.roadLight]} />
           <View style={[styles.roadBand, styles.roadBand6, isDark ? styles.roadDark : styles.roadLight]} />
 
-          <Animated.View style={[styles.centerLaneWrap, { transform: [{ translateY: laneTranslateY }] }]}>
-            <View style={[styles.centerDash, isDark ? styles.dashDark : styles.dashLight]} />
-            <View style={[styles.centerDash, isDark ? styles.dashDark : styles.dashLight]} />
-            <View style={[styles.centerDash, isDark ? styles.dashDark : styles.dashLight]} />
-          </Animated.View>
+          <View style={styles.laneLayer}>
+            {laneMeta.map((meta, idx) => (
+              <Animated.View
+                key={`center-${idx}`}
+                style={[
+                  styles.centerDash,
+                  {
+                    top: meta.top,
+                    width: meta.width,
+                    height: meta.height,
+                    backgroundColor: laneDashColor,
+                    transform: [{ translateY: laneTranslateY }],
+                    opacity: 0.94 - idx * 0.09,
+                  },
+                ]}
+              />
+            ))}
+
+            {sideMeta.map((meta, idx) => (
+              <Animated.View
+                key={`left-${idx}`}
+                style={[
+                  styles.sideDash,
+                  {
+                    top: meta.top,
+                    width: meta.width,
+                    left: 44 - idx * 2,
+                    backgroundColor: sideDashColor,
+                    transform: [{ translateY: laneTranslateY }],
+                    opacity: 0.8 - idx * 0.1,
+                  },
+                ]}
+              />
+            ))}
+
+            {sideMeta.map((meta, idx) => (
+              <Animated.View
+                key={`right-${idx}`}
+                style={[
+                  styles.sideDash,
+                  {
+                    top: meta.top,
+                    width: meta.width,
+                    right: 44 - idx * 2,
+                    backgroundColor: sideDashColor,
+                    transform: [{ translateY: laneTranslateY }],
+                    opacity: 0.8 - idx * 0.1,
+                  },
+                ]}
+              />
+            ))}
+          </View>
         </View>
 
         <Animated.View
           style={[
             styles.carWrap,
             {
-              transform: [{ translateY: carTranslateY }, { scale: carScale }],
+              transform: [{ translateX: carTranslateX }, { translateY: carTranslateY }, { rotate: carTilt }],
             },
           ]}
         >
@@ -265,12 +264,31 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
               { opacity: carGlowOpacity },
             ]}
           />
+
           <View style={styles.carBody}>
-            {CarIcon}
+            <MaterialCommunityIcons
+              name="car-sports"
+              size={52}
+              color={isDark ? "#EAF7FF" : "#2D4553"}
+            />
+
             <View style={styles.headlightsWrap}>
-              <Animated.View style={[styles.headlight, isDark ? styles.headlightDark : styles.headlightLight, { opacity: carGlowOpacity }]} />
-              <Animated.View style={[styles.headlight, isDark ? styles.headlightDark : styles.headlightLight, { opacity: carGlowOpacity }]} />
+              <Animated.View
+                style={[
+                  styles.headlight,
+                  isDark ? styles.headlightDark : styles.headlightLight,
+                  { opacity: carGlowOpacity },
+                ]}
+              />
+              <Animated.View
+                style={[
+                  styles.headlight,
+                  isDark ? styles.headlightDark : styles.headlightLight,
+                  { opacity: carGlowOpacity },
+                ]}
+              />
             </View>
+
             <View style={styles.wheelsWrap}>
               <Wheel style={styles.leftWheel} />
               <Wheel style={styles.rightWheel} />
@@ -323,6 +341,7 @@ const styles = StyleSheet.create({
     height: 170,
     alignItems: "center",
   },
+
   roadBand: {
     position: "absolute",
     borderRadius: 14,
@@ -391,6 +410,7 @@ const styles = StyleSheet.create({
   },
   headlightDark: { backgroundColor: "#C8F0FF" },
   headlightLight: { backgroundColor: "#5D87A2" },
+
   wheelsWrap: {
     position: "absolute",
     bottom: 0,
