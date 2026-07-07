@@ -4,88 +4,237 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükleniyor..." }) {
   const isDark = themeMode === "dark";
-  const approachAnim = useRef(new Animated.Value(0)).current;
-  const laneAnim = useRef(new Animated.Value(0)).current;
+  const roadFlowAnim = useRef(new Animated.Value(0)).current;
+  const bobAnim = useRef(new Animated.Value(0)).current;
+  const swayAnim = useRef(new Animated.Value(0)).current;
+  const wheelAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const approachLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(approachAnim, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(approachAnim, {
-          toValue: 0,
-          duration: 1500,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    const laneLoop = Animated.loop(
-      Animated.timing(laneAnim, {
+    const roadFlowLoop = Animated.loop(
+      Animated.timing(roadFlowAnim, {
         toValue: 1,
-        duration: 900,
+        duration: 800,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     );
 
-    const glowLoop = Animated.loop(
+    const bobLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim, {
+        Animated.timing(bobAnim, {
           toValue: 1,
-          duration: 620,
-          easing: Easing.inOut(Easing.quad),
+          duration: 360,
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
-        Animated.timing(glowAnim, {
+        Animated.timing(bobAnim, {
           toValue: 0,
-          duration: 620,
-          easing: Easing.inOut(Easing.quad),
+          duration: 360,
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
       ])
     );
 
+    const swayLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(swayAnim, {
+          toValue: 1,
+          duration: 760,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(swayAnim, {
+          toValue: 0,
+          duration: 760,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    const wheelLoop = Animated.loop(
+      Animated.timing(wheelAnim, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    roadFlowLoop.start();
+    bobLoop.start();
+    swayLoop.start();
+    wheelLoop.start();
+    const glowLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+      roadFlowLoop.stop();
+      bobLoop.stop();
+      swayLoop.stop();
+      wheelLoop.stop();
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+  }, [bobAnim, glowAnim, roadFlowAnim, swayAnim, wheelAnim]);
+        Animated.timing(glowAnim, {
+  const laneTranslateY = roadFlowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-42, 58],
+          useNativeDriver: true,
+        }),
+  const carTranslateY = bobAnim.interpolate({
+    );
+    outputRange: [0, -5],
     approachLoop.start();
     laneLoop.start();
-    glowLoop.start();
+  const carTranslateX = swayAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [-2, 2, -2],
+  });
 
-    return () => {
+  const carTilt = swayAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ["-1.5deg", "1.5deg", "-1.5deg"],
       approachLoop.stop();
       laneLoop.stop();
       glowLoop.stop();
     };
-  }, [approachAnim, glowAnim, laneAnim]);
+    outputRange: [0.26, 0.72],
+  });
+
+  const roadGlowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.18, 0.4],
+  });
+
+  const wheelRotate = wheelAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  const wheelPulse = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.65, 1],
+  });
+
+  const laneMeta = [
+    { top: 10, width: 7, height: 10 },
+    { top: 30, width: 9, height: 12 },
+    { top: 52, width: 11, height: 14 },
+    { top: 77, width: 13, height: 16 },
+    { top: 104, width: 16, height: 18 },
+    { top: 134, width: 19, height: 21 },
+  ];
+
+  const sideMeta = [
+    { top: 16, width: 14, height: 2 },
+    { top: 40, width: 18, height: 2 },
+    { top: 68, width: 22, height: 2 },
+    { top: 100, width: 28, height: 2 },
+    { top: 136, width: 34, height: 2 },
+  ];
+
+  const laneDashColor = isDark ? "#8FD5FB" : "#4F7D97";
+  const sideDashColor = isDark ? "#3A708C" : "#8FB3C8";
+  const wheelColor = isDark ? "#D8EEF9" : "#355364";
+
+  const Wheel = ({ style }) => (
+    <Animated.View style={[styles.wheel, style, { transform: [{ rotate: wheelRotate }, { scale: wheelPulse }] }]}>
+      <View style={[styles.wheelCore, { backgroundColor: wheelColor }]} />
+    </Animated.View>
+  );
+
+  const CarIcon = (
+    <MaterialCommunityIcons
+      name="car-sports"
+      size={52}
+      color={isDark ? "#EAF7FF" : "#2D4553"}
+    />
+  );
+
+  const RoadBands = [1, 2, 3, 4, 5, 6].map((idx) => (
+    <View
+      key={`band-${idx}`}
+      style={[
+        styles.roadBand,
+        styles[`roadBand${idx}`],
+        isDark ? styles.roadDark : styles.roadLight,
+      ]}
+    />
+  ));
+
+  const CenterDashes = laneMeta.map((meta, idx) => (
+    <Animated.View
+      key={`center-${idx}`}
+      style={[
+        styles.centerDash,
+        {
+          top: meta.top,
+          width: meta.width,
+          height: meta.height,
+          backgroundColor: laneDashColor,
+          transform: [{ translateY: laneTranslateY }],
+          opacity: 0.94 - idx * 0.09,
+        },
+      ]}
+    />
+  ));
+
+  const SideDashes = sideMeta.flatMap((meta, idx) => ([
+    <Animated.View
+      key={`left-${idx}`}
+      style={[
+        styles.sideDash,
+        {
+          top: meta.top,
+          width: meta.width,
+          left: 44 - idx * 2,
+          backgroundColor: sideDashColor,
+          transform: [{ translateY: laneTranslateY }],
+          opacity: 0.8 - idx * 0.1,
+        },
+      ]}
+    />,
+    <Animated.View
+      key={`right-${idx}`}
+      style={[
+        styles.sideDash,
+        {
+          top: meta.top,
+          width: meta.width,
+          right: 44 - idx * 2,
+          backgroundColor: sideDashColor,
+          transform: [{ translateY: laneTranslateY }],
+          opacity: 0.8 - idx * 0.1,
+        },
+      ]}
+    />,
+  ]));
 
   const carScale = approachAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0.84, 1.12],
-  });
+        <Animated.View
+          style={[
+            styles.roadGlow,
+            isDark ? styles.roadGlowDark : styles.roadGlowLight,
+            { opacity: roadGlowOpacity },
+          ]}
+        />
 
-  const carTranslateY = approachAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-16, 10],
   });
+          {RoadBands}
 
-  const laneTranslateY = laneAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-24, 28],
-  });
-
-  const carGlowOpacity = glowAnim.interpolate({
+          <View style={styles.laneLayer}>
+            {CenterDashes}
+            {SideDashes}
+          </View>
     inputRange: [0, 1],
     outputRange: [0.25, 0.65],
   });
 
   return (
     <View style={[styles.root, isDark ? styles.rootDark : styles.rootLight]}>
-      <View style={styles.sceneWrap}>
+              transform: [{ translateX: carTranslateX }, { translateY: carTranslateY }, { rotate: carTilt }],
         <View style={styles.horizonWrap}>
           <View style={[styles.roadBand, styles.roadBand1, isDark ? styles.roadDark : styles.roadLight]} />
           <View style={[styles.roadBand, styles.roadBand2, isDark ? styles.roadDark : styles.roadLight]} />
@@ -117,10 +266,14 @@ export default function DrivingLogoLoader({ themeMode = "dark", message = "Yükl
             ]}
           />
           <View style={styles.carBody}>
-            <MaterialCommunityIcons name="car" size={46} color={isDark ? "#EAF7FF" : "#253946"} />
+            {CarIcon}
             <View style={styles.headlightsWrap}>
-              <View style={[styles.headlight, isDark ? styles.headlightDark : styles.headlightLight]} />
-              <View style={[styles.headlight, isDark ? styles.headlightDark : styles.headlightLight]} />
+              <Animated.View style={[styles.headlight, isDark ? styles.headlightDark : styles.headlightLight, { opacity: carGlowOpacity }]} />
+              <Animated.View style={[styles.headlight, isDark ? styles.headlightDark : styles.headlightLight, { opacity: carGlowOpacity }]} />
+            </View>
+            <View style={styles.wheelsWrap}>
+              <Wheel style={styles.leftWheel} />
+              <Wheel style={styles.rightWheel} />
             </View>
           </View>
         </Animated.View>
@@ -144,84 +297,124 @@ const styles = StyleSheet.create({
   sceneWrap: {
     width: "100%",
     maxWidth: 420,
-    height: 190,
+    height: 210,
     justifyContent: "center",
     marginBottom: 14,
   },
 
+  roadGlow: {
+    position: "absolute",
+    left: "50%",
+    marginLeft: -162,
+    bottom: 30,
+    width: 324,
+    height: 128,
+    borderRadius: 999,
+  },
+  roadGlowDark: { backgroundColor: "#1B4D68" },
+  roadGlowLight: { backgroundColor: "#C2DCEB" },
+
   horizonWrap: {
     position: "absolute",
     left: "50%",
-    top: 14,
+    top: 12,
     marginLeft: -160,
     width: 320,
-    height: 150,
+    height: 170,
     alignItems: "center",
   },
   roadBand: {
     position: "absolute",
     borderRadius: 14,
   },
-  roadBand1: { top: 2, width: 90, height: 14 },
-  roadBand2: { top: 22, width: 120, height: 15 },
-  roadBand3: { top: 44, width: 154, height: 16 },
-  roadBand4: { top: 68, width: 192, height: 17 },
-  roadBand5: { top: 94, width: 236, height: 18 },
-  roadBand6: { top: 122, width: 284, height: 19 },
-  roadDark: { backgroundColor: "#153344" },
-  roadLight: { backgroundColor: "#C9DCE9" },
+  roadBand1: { top: 2, width: 86, height: 14 },
+  roadBand2: { top: 24, width: 118, height: 15 },
+  roadBand3: { top: 48, width: 154, height: 16 },
+  roadBand4: { top: 74, width: 194, height: 17 },
+  roadBand5: { top: 102, width: 238, height: 18 },
+  roadBand6: { top: 132, width: 286, height: 19 },
+  roadDark: { backgroundColor: "#17394D" },
+  roadLight: { backgroundColor: "#C5DCE9" },
 
-  centerLaneWrap: {
+  laneLayer: {
     position: "absolute",
-    top: 30,
-    alignItems: "center",
+    left: 0,
+    right: 0,
+    top: 12,
+    bottom: 0,
   },
   centerDash: {
-    width: 7,
-    height: 16,
+    position: "absolute",
+    left: "50%",
+    marginLeft: -4,
     borderRadius: 4,
-    marginBottom: 10,
   },
-  dashDark: { backgroundColor: "#7FC3E8" },
-  dashLight: { backgroundColor: "#3E6E8A" },
+  sideDash: {
+    position: "absolute",
+    borderRadius: 3,
+  },
 
   carWrap: {
     position: "absolute",
     left: "50%",
-    marginLeft: -32,
-    bottom: 8,
+    marginLeft: -34,
+    bottom: 10,
     alignItems: "center",
   },
   carGlow: {
     position: "absolute",
-    bottom: -7,
-    width: 72,
-    height: 14,
+    bottom: -10,
+    width: 78,
+    height: 16,
     borderRadius: 20,
   },
-  carGlowDark: { backgroundColor: "#7FC3E8" },
+  carGlowDark: { backgroundColor: "#76C5F0" },
   carGlowLight: { backgroundColor: "#6FA7C7" },
 
   carBody: {
-    width: 62,
-    height: 44,
+    width: 70,
+    height: 56,
     alignItems: "center",
     justifyContent: "center",
   },
   headlightsWrap: {
     position: "absolute",
-    bottom: 1,
-    width: 42,
+    bottom: 7,
+    width: 34,
     flexDirection: "row",
     justifyContent: "space-between",
   },
   headlight: {
-    width: 8,
-    height: 3,
+    width: 7,
+    height: 3.2,
     borderRadius: 2,
   },
-  headlightDark: { backgroundColor: "#BEEBFF" },
+  headlightDark: { backgroundColor: "#C8F0FF" },
   headlightLight: { backgroundColor: "#5D87A2" },
+  wheelsWrap: {
+    position: "absolute",
+    bottom: 0,
+    width: 56,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  wheel: {
+    width: 11,
+    height: 11,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: "#2A4758",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0E1E27",
+  },
+  leftWheel: { marginLeft: 2 },
+  rightWheel: { marginRight: 2 },
+  wheelCore: {
+    width: 4.5,
+    height: 4.5,
+    borderRadius: 999,
+  },
 
   message: {
     fontSize: 14,
